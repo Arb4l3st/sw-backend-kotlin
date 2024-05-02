@@ -1,0 +1,6 @@
+UPDATE budget
+SET type = 'EXPENSE'
+WHERE type = 'COMMISSION';
+
+ALTER TABLE budget
+ADD COLUMN IF NOT EXISTS author_id INTEGER REFERENCES author(id);

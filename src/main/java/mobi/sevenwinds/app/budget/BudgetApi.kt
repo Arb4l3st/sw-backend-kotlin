@@ -10,6 +10,7 @@ import com.papsign.ktor.openapigen.route.path.normal.get
 import com.papsign.ktor.openapigen.route.path.normal.post
 import com.papsign.ktor.openapigen.route.response.respond
 import com.papsign.ktor.openapigen.route.route
+import org.joda.time.DateTime
 
 fun NormalOpenAPIRoute.budget() {
     route("/budget") {
@@ -29,7 +30,8 @@ data class BudgetRecord(
     @Min(1900) val year: Int,
     @Min(1) @Max(12) val month: Int,
     @Min(1) val amount: Int,
-    val type: BudgetType
+    val type: BudgetType,
+    val authorId: Int? = null
 )
 
 data class BudgetYearParam(
@@ -41,9 +43,11 @@ data class BudgetYearParam(
 class BudgetYearStatsResponse(
     val total: Int,
     val totalByType: Map<String, Int>,
-    val items: List<BudgetRecord>
+    val items: List<BudgetRecord>,
+    val authorFullName: String? = null,
+    val authorDateCreate: DateTime? = null
 )
 
 enum class BudgetType {
-    Приход, Расход, Комиссия
+    Приход, Расход,
 }
