@@ -14,10 +14,6 @@ plugins {
 group = "mobi.sevenwinds"
 version = "0.0.1-SNAPSHOT"
 
-application {
-    mainClass.set("mobi.sevenwinds.ApplicationKt")
-    mainClassName = "mobi.sevenwinds.ApplicationKt"
-}
 
 repositories {
     mavenCentral()
@@ -68,11 +64,7 @@ dependencies {
 
 tasks.withType<Jar> {
     manifest {
-        attributes(
-            mapOf(
-                "Main-Class" to application.mainClassName
-            )
-        )
+        attributes["Main-Class"] = "mobi.sevenwinds.ApplicationKt"
     }
 }
 

@@ -28,22 +28,29 @@ fun NormalOpenAPIRoute.budget() {
 data class BudgetRecord(
     @Min(1900) val year: Int,
     @Min(1) @Max(12) val month: Int,
-    @Min(1) val amount: Int,
-    val type: BudgetType
+    val amount: Int,
+    val type: BudgetType,
+    val authorId: Int?,
+    val authorFio: String?,
+    val authorDateOfCreate: String?
 )
+
+
 
 data class BudgetYearParam(
     @PathParam("Год") val year: Int,
     @QueryParam("Лимит пагинации") val limit: Int,
     @QueryParam("Смещение пагинации") val offset: Int,
+    @QueryParam("Фильтр по ФИО") val filter: String?
 )
 
 class BudgetYearStatsResponse(
     val total: Int,
     val totalByType: Map<String, Int>,
     val items: List<BudgetRecord>
+
 )
 
 enum class BudgetType {
-    Приход, Расход, Комиссия
+    Приход, Расход
 }
