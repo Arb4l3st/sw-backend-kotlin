@@ -1,5 +1,6 @@
 package mobi.sevenwinds
 
+import com.fasterxml.jackson.annotation.JsonInclude
 import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.databind.SerializationFeature
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module
@@ -38,6 +39,7 @@ fun Application.module() {
         jackson {
             enable(SerializationFeature.INDENT_OUTPUT)
             configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+            setSerializationInclusion(JsonInclude.Include.NON_NULL)
             registerModule(Jdk8Module())
         }
     }
