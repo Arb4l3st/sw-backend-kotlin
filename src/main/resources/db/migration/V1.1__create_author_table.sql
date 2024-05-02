@@ -1,0 +1,7 @@
+CREATE TABLE IF NOT EXISTS author
+(
+    id          SERIAL PRIMARY KEY,
+    full_name   TEXT      NOT NULL,
+    date_create TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
