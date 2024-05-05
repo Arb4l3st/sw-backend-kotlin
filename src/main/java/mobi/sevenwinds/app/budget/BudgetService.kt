@@ -19,6 +19,10 @@ object BudgetService {
         }
     }
 
+    fun getAuthor(authorId: Int?): AuthorRecord? {
+        return null
+    }
+
     suspend fun getYearStats(param: BudgetYearParam): BudgetYearStatsResponse = withContext(Dispatchers.IO) {
         transaction {
             val query = BudgetTable

@@ -12,6 +12,12 @@ object BudgetTable : IntIdTable("budget") {
     val type = enumerationByName("type", 100, BudgetType::class)
 }
 
+object AuthorTable: IntIdTable("author"){
+    val ID = integer("id")
+    val FIO = text("fio")
+    val date = datetime("date")
+}
+
 class BudgetEntity(id: EntityID<Int>) : IntEntity(id) {
     companion object : IntEntityClass<BudgetEntity>(BudgetTable)
 
