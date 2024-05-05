@@ -1,0 +1,10 @@
+-- Change the name of the BudgetType column in the Budget table
+ALTER TABLE Budget
+CHANGE BudgetType NewBudgetType ENUM('Expense', 'Income') NOT NULL;
+
+-- Update the data in the NewBudgetType column
+UPDATE Budget
+SET NewBudgetType = CASE
+    WHEN BudgetType = 'Commission' THEN 'Expense'
+    ELSE NewBudgetType
+END;

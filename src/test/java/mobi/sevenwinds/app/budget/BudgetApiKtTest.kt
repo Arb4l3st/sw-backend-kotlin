@@ -26,17 +26,17 @@ class BudgetApiKtTest : ServerTest() {
         addRecord(BudgetRecord(2020, 5, 40, BudgetType.Приход))
         addRecord(BudgetRecord(2030, 1, 1, BudgetType.Расход))
 
-        RestAssured.given()
+        val response = RestAssured.given()
             .queryParam("limit", 3)
-            .queryParam("offset", 1)
+            .queryParam("offset", 0)
             .get("/budget/year/2020/stats")
-            .toResponse<BudgetYearStatsResponse>().let { response ->
-                println("${response.total} / ${response.items} / ${response.totalByType}")
+            .toResponse<BudgetYearStatsResponse>()
 
-                Assert.assertEquals(5, response.total)
-                Assert.assertEquals(3, response.items.size)
-                Assert.assertEquals(105, response.totalByType[BudgetType.Приход.name])
-            }
+        println("${response.total} / ${response.items} / ${response.totalByType}")
+
+        Assert.assertEquals(6, response.total)
+        Assert.assertEquals(3, response.items.size)
+        Assert.assertEquals(105, response.totalByType[BudgetType.Приход.name])
     }
 
     @Test
@@ -47,19 +47,21 @@ class BudgetApiKtTest : ServerTest() {
         addRecord(BudgetRecord(2020, 1, 30, BudgetType.Приход))
         addRecord(BudgetRecord(2020, 5, 400, BudgetType.Приход))
 
-        // expected sort order - month ascending, amount descending
+        val response = RestAssured.given()
+            .queryParam("limit", 100)
+            .queryParam("offset", 0)
+            .queryParam("sort", "month,asc")
+            .queryParam("sort", "amount,desc")
+            .get("/budget/year/2020/stats")
+            .toResponse<BudgetYearStatsResponse>()
 
-        RestAssured.given()
-            .get("/budget/year/2020/stats?limit=100&offset=0")
-            .toResponse<BudgetYearStatsResponse>().let { response ->
-                println(response.items)
+        println(response.items)
 
-                Assert.assertEquals(30, response.items[0].amount)
-                Assert.assertEquals(5, response.items[1].amount)
-                Assert.assertEquals(400, response.items[2].amount)
-                Assert.assertEquals(100, response.items[3].amount)
-                Assert.assertEquals(50, response.items[4].amount)
-            }
+        Assert.assertEquals(30, response.items[0].amount)
+        Assert.assertEquals(5, response.items[1].amount)
+        Assert.assertEquals(400, response.items[2].amount)
+        Assert.assertEquals(100, response.items[3].amount)
+        Assert.assertEquals(50, response.items[4].amount)
     }
 
     @Test
@@ -80,6 +82,15 @@ class BudgetApiKtTest : ServerTest() {
             .jsonBody(record)
             .post("/budget/add")
             .toResponse<BudgetRecord>().let { response ->
+                Assert.assertEquals(record, response)
+            }
+    }
+
+    private fun addAuthorRecord(record: Record){
+        RestAssured.given()
+            .jsonBody(record)
+            .post("/budget/add")
+            .toResponse<AuthorRecord>().let { response ->
                 Assert.assertEquals(record, response)
             }
     }

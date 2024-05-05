@@ -14,12 +14,24 @@ import com.papsign.ktor.openapigen.route.route
 fun NormalOpenAPIRoute.budget() {
     route("/budget") {
         route("/add").post<Unit, BudgetRecord, BudgetRecord>(info("Добавить запись")) { param, body ->
-            respond(BudgetService.addRecord(body))
+            respond(BudgetService.addRecord(body.copy(authorId = body.authorId)))
         }
 
         route("/year/{year}/stats") {
             get<BudgetYearParam, BudgetYearStatsResponse>(info("Получить статистику за год")) { param ->
-                respond(BudgetService.getYearStats(param))
+                val yearStats = BudgetService.getYearStats(param)
+                val filteredItems = if (param.authorFio!= null) {
+                    yearStats.items.filter { it.authorId!= null && BudgetService.getAuthor(it.authorId)?.fio?.contains(param.authorFio!!, ignoreCase = true) == true }
+                } else {
+                    yearStats.items
+                }
+                val authors = filteredItems.mapNotNull { BudgetService.getAuthor(it.authorId) }
+                respond(BudgetYearStatsResponse(
+                    total = filteredItems.sumBy { it.amount },
+                    totalByType = filteredItems.groupBy { it.type.name }.mapValues { it.value.sumBy { it.amount } },
+                    items = filteredItems,
+                    authors = authors
+                ))
             }
         }
     }
@@ -29,19 +41,28 @@ data class BudgetRecord(
     @Min(1900) val year: Int,
     @Min(1) @Max(12) val month: Int,
     @Min(1) val amount: Int,
-    val type: BudgetType
+    val type: BudgetType,
+    val authorId: Int? = null
+)
+
+data class AuthorRecord(
+    @Min(0) val id: Int,
+    val fio: String,
+    val date: String,
 )
 
 data class BudgetYearParam(
     @PathParam("Год") val year: Int,
     @QueryParam("Лимит пагинации") val limit: Int,
     @QueryParam("Смещение пагинации") val offset: Int,
+    @QueryParam("ФИО автора") val authorFio: String? = null // optional author FIO filter
 )
 
 class BudgetYearStatsResponse(
     val total: Int,
     val totalByType: Map<String, Int>,
-    val items: List<BudgetRecord>
+    val items: List<BudgetRecord>,
+    val authors: List<AuthorRecord> = emptyList() // list of authors
 )
 
 enum class BudgetType {
