@@ -1,5 +1,6 @@
 package mobi.sevenwinds.app.budget
 
+import AuthorEntity
 import org.jetbrains.exposed.dao.EntityID
 import org.jetbrains.exposed.dao.IntEntity
 import org.jetbrains.exposed.dao.IntEntityClass
@@ -10,7 +11,9 @@ object BudgetTable : IntIdTable("budget") {
     val month = integer("month")
     val amount = integer("amount")
     val type = enumerationByName("type", 100, BudgetType::class)
+    val authorId = integer("author_id").nullable()
 }
+
 
 class BudgetEntity(id: EntityID<Int>) : IntEntity(id) {
     companion object : IntEntityClass<BudgetEntity>(BudgetTable)
@@ -19,8 +22,19 @@ class BudgetEntity(id: EntityID<Int>) : IntEntity(id) {
     var month by BudgetTable.month
     var amount by BudgetTable.amount
     var type by BudgetTable.type
+    var authorId by BudgetTable.authorId
+
 
     fun toResponse(): BudgetRecord {
-        return BudgetRecord(year, month, amount, type)
+        return BudgetRecord(
+            year, month, amount, type, authorId,
+        )
+    }
+
+    fun toResponseStats(): BudgetRecordResponse {
+        return BudgetRecordResponse(year, month, amount, type, authorId,
+            authorId?.let { AuthorEntity.findById(it)?.fullName ?: "0" },
+            authorId?.let { AuthorEntity.findById(it)?.date ?: "0" })
     }
 }
+
