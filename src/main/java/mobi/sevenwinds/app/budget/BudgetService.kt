@@ -24,15 +24,19 @@ object BudgetService {
 
     suspend fun getYearStats(param: BudgetYearParam): BudgetYearStatsResponse = withContext(Dispatchers.IO) {
         transaction {
-            var query = BudgetTable
-                .join(AuthorTable, JoinType.LEFT, BudgetTable.authorId, AuthorTable.id)
-                .select { BudgetTable.year eq param.year }
-            if (!param.authorName.isNullOrBlank()) {
-                query = query.andWhere { AuthorTable.name.lowerCase() like "%${param.authorName}%" }
+            var query = if (!param.authorName.isNullOrBlank()) {
+                BudgetTable
+                    .join(AuthorTable, JoinType.LEFT, BudgetTable.authorId, AuthorTable.id)
+                    .select { BudgetTable.year eq param.year }
+                    .andWhere { AuthorTable.name.lowerCase() like "%${param.authorName}%" }
+                    .orderBy(BudgetTable.month to SortOrder.ASC, BudgetTable.amount to SortOrder.DESC)
+                    .limit(param.limit, param.offset)
+            } else {
+                BudgetTable
+                    .select { BudgetTable.year eq param.year }
+                    .orderBy(BudgetTable.month to SortOrder.ASC, BudgetTable.amount to SortOrder.DESC)
+                    .limit(param.limit, param.offset)
             }
-            query
-                .orderBy(BudgetTable.month to SortOrder.ASC, BudgetTable.amount to SortOrder.DESC)
-                .limit(param.limit, param.offset)
 
             val yearRecords = BudgetTable.select { BudgetTable.year eq param.year }
             val total = yearRecords.count()
