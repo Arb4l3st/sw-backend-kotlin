@@ -1,6 +1,8 @@
 package mobi.sevenwinds.app.budget
 
 import io.restassured.RestAssured
+import mobi.sevenwinds.app.author.AuthorDto
+import mobi.sevenwinds.app.author.AuthorTable
 import mobi.sevenwinds.common.ServerTest
 import mobi.sevenwinds.common.jsonBody
 import mobi.sevenwinds.common.toResponse
@@ -14,8 +16,36 @@ class BudgetApiKtTest : ServerTest() {
 
     @BeforeEach
     internal fun setUp() {
-        transaction { BudgetTable.deleteAll() }
+        transaction {
+            BudgetTable.deleteAll()
+            AuthorTable.deleteAll()
+        }
     }
+
+    @Test
+    fun testCreateAuthor() {
+        val author = AuthorDto(0, "Иван Иванов", "")
+        val createdAuthor = createAuthor(author)
+        Assert.assertEquals("Иван Иванов", createdAuthor.name)
+    }
+
+    @Test
+    fun testAddRecordWithAuthor() {
+        val author = createAuthor(AuthorDto(0, "Иван Иванов", ""))
+        val record = BudgetRecord(2020, 5, 10, BudgetType.Приход, author.id)
+
+        RestAssured.given()
+            .jsonBody(record)
+            .post("/budget/add")
+            .toResponse<BudgetResponseDto>().let { response ->
+                Assert.assertEquals(record.year, response.year)
+                Assert.assertEquals(record.month, response.month)
+                Assert.assertEquals(record.amount, response.amount)
+                Assert.assertEquals(record.type, response.type)
+                Assert.assertEquals(author.name, response.authorName)
+            }
+    }
+
 
     @Test
     fun testBudgetPagination() {
@@ -73,6 +103,13 @@ class BudgetApiKtTest : ServerTest() {
             .jsonBody(BudgetRecord(2020, 15, 5, BudgetType.Приход))
             .post("/budget/add")
             .then().statusCode(400)
+    }
+
+    private fun createAuthor(author: AuthorDto): AuthorDto {
+        return RestAssured.given()
+            .jsonBody(author)
+            .post("/author/add")
+            .toResponse()
     }
 
     private fun addRecord(record: BudgetRecord) {

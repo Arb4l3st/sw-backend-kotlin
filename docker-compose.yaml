@@ -1,0 +1,36 @@
+services:
+  database:
+    image: postgres:9-alpine
+    container_name: 'test-backend-db'
+    environment:
+      - POSTGRES_DB=dev_mem
+      - POSTGRES_USER=dev
+      - POSTGRES_PASSWORD=dev
+    ports:
+      - 45533:5432
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U dev" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: 'test-backend-app'
+    environment:
+      - DB_JDBC_URL=jdbc:postgresql://database:45533/dev_mem
+      - DB_USER=dev
+      - DB_PASSWORD=dev
+    depends_on:
+      database:
+        condition: service_healthy
+    ports:
+      - 8080:8080
+
+
+volumes:
+  postgres-data:
