@@ -7,7 +7,6 @@ import org.flywaydb.core.Flyway
 import org.jetbrains.exposed.sql.Database
 
 object DatabaseFactory {
-
     lateinit var appConfig: ApplicationConfig
 
     private val dbDriver: String by lazy { appConfig.property("db.jdbcDriver").getString() }
@@ -23,6 +22,7 @@ object DatabaseFactory {
         val flyway = Flyway.configure().dataSource(dbUrl, dbUser, dbPassword)
             .locations("classpath:db/migration")
 //            .baselineOnMigrate(true)
+            .cleanDisabled(appConfig.property("flyway.cleanDisabled").getString().toBoolean())
             .outOfOrder(true)
             .load()
 
