@@ -1,7 +1,11 @@
 package mobi.sevenwinds.app.budget
 
 import io.restassured.RestAssured
+import mobi.sevenwinds.app.author.AuthorIdRequest
+import mobi.sevenwinds.app.author.AuthorNameRequest
+import mobi.sevenwinds.app.author.AuthorResponse
 import mobi.sevenwinds.common.ServerTest
+import mobi.sevenwinds.common.equal
 import mobi.sevenwinds.common.jsonBody
 import mobi.sevenwinds.common.toResponse
 import org.jetbrains.exposed.sql.deleteAll
@@ -40,6 +44,30 @@ class BudgetApiKtTest : ServerTest() {
     }
 
     @Test
+    fun testBudgetWithAuthorPagination() {
+        val ivan = addAuthor(AuthorNameRequest("Иванов Иван Иванович"))
+        val andrey = addAuthor(AuthorNameRequest("Андреев Андрей Андреевич"))
+
+        addRecord(BudgetRecord(2020, 5, 10, BudgetType.Приход, AuthorIdRequest(ivan.id)))
+        addRecord(BudgetRecord(2020, 5, 5, BudgetType.Приход, AuthorIdRequest(andrey.id)))
+        addRecord(BudgetRecord(2030, 1, 1, BudgetType.Расход, AuthorIdRequest(ivan.id)))
+        addRecord(BudgetRecord(2020, 5, 30, BudgetType.Приход, AuthorIdRequest(ivan.id)))
+
+        RestAssured.given()
+                .queryParam("limit", 3)
+                .queryParam("offset", 1)
+                .queryParam("authorName", "Иванов")
+                .get("/budget/year/2020/stats")
+                .toResponse<BudgetYearStatsResponse>().let { response ->
+                    println("${response.total} / ${response.items} / ${response.totalByType}")
+
+                    Assert.assertEquals(2, response.total)
+                    Assert.assertEquals(1, response.items.size)
+                    Assert.assertEquals(45, response.totalByType[BudgetType.Приход.name])
+                }
+    }
+
+    @Test
     fun testStatsSortOrder() {
         addRecord(BudgetRecord(2020, 5, 100, BudgetType.Приход))
         addRecord(BudgetRecord(2020, 1, 5, BudgetType.Приход))
@@ -65,22 +93,28 @@ class BudgetApiKtTest : ServerTest() {
     @Test
     fun testInvalidMonthValues() {
         RestAssured.given()
-            .jsonBody(BudgetRecord(2020, -5, 5, BudgetType.Приход))
+            .jsonBody(BudgetRecord<AuthorIdRequest>(2020, -5, 5, BudgetType.Приход))
             .post("/budget/add")
             .then().statusCode(400)
 
         RestAssured.given()
-            .jsonBody(BudgetRecord(2020, 15, 5, BudgetType.Приход))
+            .jsonBody(BudgetRecord<AuthorIdRequest>(2020, 15, 5, BudgetType.Приход))
             .post("/budget/add")
             .then().statusCode(400)
     }
 
-    private fun addRecord(record: BudgetRecord) {
+    private fun addRecord(record: BudgetRecord<AuthorIdRequest>) {
         RestAssured.given()
             .jsonBody(record)
             .post("/budget/add")
-            .toResponse<BudgetRecord>().let { response ->
-                Assert.assertEquals(record, response)
+            .toResponse<BudgetRecord<AuthorResponse>>().let { response ->
+                Assert.assertTrue(record.equal(response))
             }
     }
+
+    private fun addAuthor(record: AuthorNameRequest) =
+        RestAssured.given()
+            .jsonBody(record)
+            .post("/author/add")
+            .toResponse<AuthorResponse>()
 }
