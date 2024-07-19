@@ -14,4 +14,16 @@ object AuthorService {
             }.toResponse()
         }
     }
+    fun getRecord(id: Int) =
+        transaction {
+            AuthorEntity.findById(id)
+        }
+
+    suspend fun getRecordSuspend(id: Int) = withContext(Dispatchers.IO) {
+        transaction {
+            AuthorEntity.findById(id)
+        }
+    }
+
+
 }
