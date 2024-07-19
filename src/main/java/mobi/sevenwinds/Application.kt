@@ -26,6 +26,7 @@ import org.slf4j.event.Level
 
 fun main(args: Array<String>): Unit = EngineMain.main(args)
 
+@Suppress("unused")
 fun Application.module() {
     Config.init(environment.config)
     DatabaseFactory.init(environment.config)

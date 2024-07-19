@@ -44,6 +44,7 @@ class BudgetYearStatsResponse(
     val items: List<BudgetRecord>
 )
 
+@Suppress("NonAsciiCharacters", "EnumEntryName")
 enum class BudgetType {
     Приход, Расход, Комиссия
 }
