@@ -1,19 +1,22 @@
 package mobi.sevenwinds.app.budget
 
+import io.ktor.features.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import mobi.sevenwinds.app.author.AuthorEntity
 import mobi.sevenwinds.app.author.AuthorTable
 import org.jetbrains.exposed.sql.*
+import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 import org.jetbrains.exposed.sql.transactions.transaction
 
 object BudgetService {
     suspend fun addRecord(body: BudgetRequest): BudgetResponse = withContext(Dispatchers.IO) {
-//        newSuspendedTransaction(Dispatchers.IO) {
-        transaction {
+        newSuspendedTransaction(Dispatchers.IO) {
+//        transaction {
 //            val author = body.authorId?.let { AuthorService.getRecord(it) }
 //            val author = body.authorId?.let { AuthorService.getRecordSuspend(it) }
-            val author = body.authorId?.let { id -> AuthorEntity.findById(id) }
+            val author = body.authorId?.let { id -> AuthorEntity.findById(id)
+                ?: throw NotFoundException("Author with id $id is not found") }
             val entity = BudgetEntity.new {
                 this.year = body.year
                 this.month = body.month
@@ -26,7 +29,7 @@ object BudgetService {
     }
 
     suspend fun getYearStats(param: BudgetYearParam): BudgetYearStatsResponse = withContext(Dispatchers.IO) {
-        transaction {
+        newSuspendedTransaction {
             addLogger(StdOutSqlLogger)
 
             val sumByTypeQuery = BudgetTable
@@ -62,7 +65,7 @@ object BudgetService {
 //                        data.forEach { println(it) }
 
 
-            return@transaction BudgetYearStatsResponse(
+            return@newSuspendedTransaction BudgetYearStatsResponse(
                 total = total,
                 totalByType = sumByType,
                 items = data

@@ -12,6 +12,7 @@ import org.jetbrains.exposed.sql.transactions.transaction
 import org.junit.Assert
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
 
 class BudgetApiKtTest : ServerTest() {
 
@@ -104,6 +105,15 @@ class BudgetApiKtTest : ServerTest() {
 
                 Assert.assertEquals(2, response.items.size)
             }
+    }
+
+    @Test
+    fun testBudgetAddWithNotExistedAuthor() {
+        RestAssured.given()
+            .jsonBody(BudgetRequest(2020, 5, 10, BudgetType.Приход, 1))
+            .post("/budget/add")
+            .statusCode.let { Assert.assertEquals(404, it) }
+
     }
 
 
