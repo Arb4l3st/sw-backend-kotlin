@@ -46,5 +46,5 @@ class BudgetYearStatsResponse(
 
 @Suppress("NonAsciiCharacters", "EnumEntryName")
 enum class BudgetType {
-    Приход, Расход, Комиссия
+    Приход, Расход
 }
