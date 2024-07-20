@@ -14,10 +14,12 @@ plugins {
 group = "mobi.sevenwinds"
 version = "0.0.1-SNAPSHOT"
 
-application {
-    mainClass.set("mobi.sevenwinds.ApplicationKt")
-    mainClassName = "mobi.sevenwinds.ApplicationKt"
-}
+
+application.mainClass.set("mobi.sevenwinds.ApplicationKt")
+//application {
+//    mainClass.set("mobi.sevenwinds.ApplicationKt")
+//    mainClassName = "mobi.sevenwinds.ApplicationKt"
+//}
 
 repositories {
     mavenCentral()
@@ -47,10 +49,10 @@ dependencies {
 
     implementation("at.favre.lib:bcrypt:0.9.0")
 
-    implementation("org.postgresql:postgresql:42.2.12")
+    implementation("org.postgresql:postgresql:42.7.3")
 
-    implementation("org.jetbrains.exposed:exposed:0.17.13")
-    implementation("com.zaxxer:HikariCP:2.7.8")
+    implementation("org.jetbrains.exposed:exposed:0.17.14")
+    implementation("com.zaxxer:HikariCP:5.1.0")
     implementation("org.flywaydb:flyway-core:5.2.4")
 
     implementation("com.squareup.retrofit2:retrofit:2.3.0")
@@ -70,7 +72,7 @@ tasks.withType<Jar> {
     manifest {
         attributes(
             mapOf(
-                "Main-Class" to application.mainClassName
+                "Main-Class" to application.mainClass
             )
         )
     }

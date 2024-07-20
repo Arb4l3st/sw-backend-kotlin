@@ -16,9 +16,9 @@ open class ServerTest {
 
         private lateinit var server: ApplicationEngine
 
-        @Suppress("unused")
-        @KtorExperimentalAPI
-        @ExperimentalCoroutinesApi
+//        @Suppress("unused")
+//        @KtorExperimentalAPI
+//        @ExperimentalCoroutinesApi
         @BeforeAll
         @JvmStatic
         fun startServer() {
