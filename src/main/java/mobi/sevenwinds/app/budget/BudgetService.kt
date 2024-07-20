@@ -26,7 +26,7 @@ object BudgetService {
 
     suspend fun getYearStats(param: BudgetYearParam): BudgetYearStatsResponse = withContext(Dispatchers.IO) {
         newSuspendedTransaction {
-            addLogger(StdOutSqlLogger)
+//            addLogger(StdOutSqlLogger)
 
             return@newSuspendedTransaction BudgetYearStatsResponse(
                 total = totalYearStats(param),
