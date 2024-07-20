@@ -7,16 +7,12 @@ import mobi.sevenwinds.app.author.AuthorEntity
 import mobi.sevenwinds.app.author.AuthorTable
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
-import org.jetbrains.exposed.sql.transactions.transaction
 
 object BudgetService {
     suspend fun addRecord(body: BudgetRequest): BudgetResponse = withContext(Dispatchers.IO) {
         newSuspendedTransaction(Dispatchers.IO) {
-//        transaction {
-//            val author = body.authorId?.let { AuthorService.getRecord(it) }
-//            val author = body.authorId?.let { AuthorService.getRecordSuspend(it) }
             val author = body.authorId?.let { id -> AuthorEntity.findById(id)
-                ?: throw NotFoundException("Author with id $id is not found") }
+                ?: throw NotFoundException("Author with id=$id is not found") }
             val entity = BudgetEntity.new {
                 this.year = body.year
                 this.month = body.month
@@ -32,44 +28,42 @@ object BudgetService {
         newSuspendedTransaction {
             addLogger(StdOutSqlLogger)
 
-            val sumByTypeQuery = BudgetTable
-                .slice(BudgetTable.type, BudgetTable.amount.sum())
-                .select {
-                    BudgetTable.year eq param.year
-                }
-                .groupBy(BudgetTable.type)
-
-            val itemsQuery = BudgetTable
-                .leftJoin(AuthorTable, {authorId}, {id})
-                .select {
-                    BudgetTable.year eq param.year
-                }.run {
-                    if (param.authorName != null)
-                        andWhere { LowerCase(AuthorTable.fullName) like "%${param.authorName.toLowerCase()}%" }
-                    else this
-                }
-                .orderBy(BudgetTable.month to SortOrder.ASC, BudgetTable.amount to SortOrder.DESC)
-                .limit(param.limit, param.offset)
-
-            val total = BudgetTable
-                .select {
-                    BudgetTable.year eq param.year
-                }.count()
-
-
-            val sumByType = sumByTypeQuery.associate {
-                it[BudgetTable.type].name to (it[BudgetTable.amount.sum()] ?: 0)
-            }
-            val data = BudgetEntity.wrapRows(itemsQuery).map { it.toResponse() }
-//            data.forEach { println(it.author?.fullName) }
-//                        data.forEach { println(it) }
-
-
             return@newSuspendedTransaction BudgetYearStatsResponse(
-                total = total,
-                totalByType = sumByType,
-                items = data
+                total = totalYearStats(param),
+                totalByType = totalYearStatsByType(param),
+                items = itemsForYearStats(param)
             )
         }
     }
+
+    private fun Transaction.totalYearStatsByType(param: BudgetYearParam) = BudgetTable
+        .slice(BudgetTable.type, BudgetTable.amount.sum())
+        .select {
+            BudgetTable.year eq param.year
+        }
+        .groupBy(BudgetTable.type)
+        .associate {
+            it[BudgetTable.type].name to (it[BudgetTable.amount.sum()] ?: 0)
+        }
+
+    private fun Transaction.totalYearStats(param: BudgetYearParam) = BudgetTable
+        .select {
+            BudgetTable.year eq param.year
+        }.count()
+
+    private fun Transaction.itemsForYearStats(param: BudgetYearParam) = BudgetTable
+        .leftJoin(AuthorTable, {authorId}, {id})
+        .select {
+            BudgetTable.year eq param.year
+        }.run {
+            if (param.authorName != null)
+                andWhere { LowerCase(AuthorTable.fullName) like "%${param.authorName.toLowerCase()}%" }
+            else this
+        }
+        .orderBy(BudgetTable.month to SortOrder.ASC, BudgetTable.amount to SortOrder.DESC)
+        .limit(param.limit, param.offset)
+        .map { row ->
+            if (row[BudgetTable.authorId] != null) AuthorEntity.wrapRow(row)
+            BudgetEntity.wrapRow(row).toResponse()
+        }
 }
