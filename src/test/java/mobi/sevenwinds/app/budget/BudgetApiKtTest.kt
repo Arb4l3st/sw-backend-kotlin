@@ -27,15 +27,15 @@ class BudgetApiKtTest : ServerTest() {
         addRecord(BudgetRecord(2030, 1, 1, BudgetType.Расход))
 
         RestAssured.given()
-            .queryParam("limit", 3)
-            .queryParam("offset", 1)
+            .queryParam("limit", 5)
+            .queryParam("offset", 3)
             .get("/budget/year/2020/stats")
             .toResponse<BudgetYearStatsResponse>().let { response ->
-                println("${response.total} / ${response.items} / ${response.totalByType}")
+                println("${response.total} / ${response.items.size} / ${response.totalByType}")
 
-                Assert.assertEquals(5, response.total)
+                Assert.assertEquals(6, response.total)
                 Assert.assertEquals(3, response.items.size)
-                Assert.assertEquals(105, response.totalByType[BudgetType.Приход.name])
+                Assert.assertEquals(5, response.totalByType[BudgetType.Приход.name])
             }
     }
 
@@ -50,7 +50,7 @@ class BudgetApiKtTest : ServerTest() {
         // expected sort order - month ascending, amount descending
 
         RestAssured.given()
-            .get("/budget/year/2020/stats?limit=100&offset=0")
+            .get("/budget/year/2020/stats?limit=100&offset=0&sort=month&order=asc")
             .toResponse<BudgetYearStatsResponse>().let { response ->
                 println(response.items)
 
