@@ -28,8 +28,8 @@ class BudgetEntity(id: EntityID<Int>) : IntEntity(id) {
             year,
             month,
             amount,
-            authorId,
-            author.toResponse(),
-            type)
+            author.toResponse().id.value,
+            type
+        )
     }
 }

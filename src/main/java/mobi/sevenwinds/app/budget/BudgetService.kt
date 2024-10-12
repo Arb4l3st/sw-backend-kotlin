@@ -39,7 +39,8 @@ object BudgetService {
             val total = query.count()  // Получаем количество записей
             val data = BudgetEntity.wrapRows(query).map { it.toResponse() }  // Преобразуем в ответный объект
 
-            val sumByType = data.groupBy { it.type.name }.mapValues { it.value.sumOf { v -> v.amount } }  // Сумма по типам
+            val sumByType =
+                data.groupBy { it.type.name }.mapValues { it.value.sumOf { v -> v.amount } }  // Сумма по типам
 
             return@transaction BudgetYearStatsResponse(
                 total = total,

@@ -19,6 +19,6 @@ class AuthorEntity(id: EntityID<Int>) : IntEntity(id) {
     var type by AuthorTable.type
 
     fun toResponse(): AuthorRecord {
-        return AuthorRecord(fio, creationDateTime, type)
+        return AuthorRecord(id, fio, creationDateTime, type)
     }
 }
