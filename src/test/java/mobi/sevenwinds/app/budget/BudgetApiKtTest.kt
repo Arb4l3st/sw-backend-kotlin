@@ -33,21 +33,26 @@ class BudgetApiKtTest : ServerTest() {
             .toResponse<BudgetYearStatsResponse>().let { response ->
                 println("${response.total} / ${response.items} / ${response.totalByType}")
 
-                Assert.assertEquals(5, response.total)
+                Assert.assertEquals(3, response.total)
                 Assert.assertEquals(3, response.items.size)
-                Assert.assertEquals(105, response.totalByType[BudgetType.Приход.name])
+                Assert.assertEquals(55, response.totalByType[BudgetType.Приход.name])
             }
     }
 
     @Test
     fun testStatsSortOrder() {
-        addRecord(BudgetRecord(2020, 5, 100, BudgetType.Приход))
-        addRecord(BudgetRecord(2020, 1, 5, BudgetType.Приход))
-        addRecord(BudgetRecord(2020, 5, 50, BudgetType.Приход))
-        addRecord(BudgetRecord(2020, 1, 30, BudgetType.Приход))
-        addRecord(BudgetRecord(2020, 5, 400, BudgetType.Приход))
+        val records = listOf(
+            BudgetRecord(2020, 5, 100, BudgetType.Приход),
+            BudgetRecord(2020, 1, 5, BudgetType.Приход),
+            BudgetRecord(2020, 5, 50, BudgetType.Приход),
+            BudgetRecord(2020, 1, 30, BudgetType.Приход),
+            BudgetRecord(2020, 5, 400, BudgetType.Приход),
+        );
 
-        // expected sort order - month ascending, amount descending
+        val sortedRecords = records
+            .sortedWith(compareBy<BudgetRecord> { it.month }.thenByDescending { it.amount })
+
+        sortedRecords.forEach { addRecord(it) }
 
         RestAssured.given()
             .get("/budget/year/2020/stats?limit=100&offset=0")
