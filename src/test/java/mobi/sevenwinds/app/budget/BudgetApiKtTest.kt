@@ -26,6 +26,7 @@ class BudgetApiKtTest : ServerTest() {
         addRecord(BudgetRecord(2020, 5, 40, BudgetType.Приход))
         addRecord(BudgetRecord(2030, 1, 1, BudgetType.Расход))
 
+        // Ожидаем получить только 3 записи (пагинация) начиная со второй записи
         RestAssured.given()
             .queryParam("limit", 3)
             .queryParam("offset", 1)
@@ -33,9 +34,9 @@ class BudgetApiKtTest : ServerTest() {
             .toResponse<BudgetYearStatsResponse>().let { response ->
                 println("${response.total} / ${response.items} / ${response.totalByType}")
 
-                Assert.assertEquals(5, response.total)
-                Assert.assertEquals(3, response.items.size)
-                Assert.assertEquals(105, response.totalByType[BudgetType.Приход.name])
+                Assert.assertEquals(5, response.total) // Всего 5 записей за 2020 год
+                Assert.assertEquals(3, response.items.size) // Пагинация, возвращаем 3 записи
+                Assert.assertEquals(105, response.totalByType[BudgetType.Приход.name]) // Общая сумма по типу "Приход"
             }
     }
 
@@ -47,18 +48,18 @@ class BudgetApiKtTest : ServerTest() {
         addRecord(BudgetRecord(2020, 1, 30, BudgetType.Приход))
         addRecord(BudgetRecord(2020, 5, 400, BudgetType.Приход))
 
-        // expected sort order - month ascending, amount descending
-
+        // Ожидаем сортировку по месяцу (по возрастанию) и по сумме (по убыванию)
         RestAssured.given()
             .get("/budget/year/2020/stats?limit=100&offset=0")
             .toResponse<BudgetYearStatsResponse>().let { response ->
                 println(response.items)
 
-                Assert.assertEquals(30, response.items[0].amount)
-                Assert.assertEquals(5, response.items[1].amount)
-                Assert.assertEquals(400, response.items[2].amount)
-                Assert.assertEquals(100, response.items[3].amount)
-                Assert.assertEquals(50, response.items[4].amount)
+                // Проверяем сортировку записей
+                Assert.assertEquals(30, response.items[0].amount) // Сначала запись с суммой 30 за январь
+                Assert.assertEquals(5, response.items[1].amount)  // Потом запись с суммой 5 за январь
+                Assert.assertEquals(400, response.items[2].amount) // Далее идет сумма 400 за май
+                Assert.assertEquals(100, response.items[3].amount) // Потом 100 за май
+                Assert.assertEquals(50, response.items[4].amount)  // И последняя - 50 за май
             }
     }
 
