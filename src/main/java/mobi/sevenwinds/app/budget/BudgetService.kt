@@ -65,12 +65,12 @@ object BudgetService {
     }
 
     private fun getYearBudgetRecordsPage(param: BudgetYearParam): List<BudgetRecord> {
-        val pageQueryFilteredByYear = BudgetTable
+        val recordsByYearPage = BudgetTable
             .select { BudgetTable.year eq param.year }
             .limit(param.limit, param.offset)
 
         return BudgetEntity
-            .wrapRows(pageQueryFilteredByYear)
+            .wrapRows(recordsByYearPage)
             .map(BudgetEntity::toResponse)
     }
 }
