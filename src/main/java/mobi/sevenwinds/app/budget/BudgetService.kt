@@ -2,9 +2,7 @@ package mobi.sevenwinds.app.budget
 
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import org.jetbrains.exposed.sql.count
-import org.jetbrains.exposed.sql.select
-import org.jetbrains.exposed.sql.sum
+import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 import org.jetbrains.exposed.sql.transactions.transaction
 
@@ -65,9 +63,15 @@ object BudgetService {
     }
 
     private fun getYearBudgetRecordsPage(param: BudgetYearParam): List<BudgetRecord> {
+        val defaultSorts = arrayOf(
+            BudgetTable.month to SortOrder.ASC,
+            BudgetTable.amount to SortOrder.DESC
+        )
+
         val recordsByYearPage = BudgetTable
-            .select { BudgetTable.year eq param.year }
-            .limit(param.limit, param.offset)
+                .select { BudgetTable.year eq param.year }
+                .orderBy(*defaultSorts)
+                .limit(param.limit, param.offset);
 
         return BudgetEntity
             .wrapRows(recordsByYearPage)
