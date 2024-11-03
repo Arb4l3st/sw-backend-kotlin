@@ -24,7 +24,10 @@ class BudgetEntity(id: EntityID<Int>) : IntEntity(id) {
     var type by BudgetTable.type
     var authorEntity by AuthorEntity optionalReferencedOn BudgetTable.authorId
 
-    fun toResponse(): BudgetRecord {
-        return BudgetRecord(year, month, amount, type,  authorEntity?.fullName ?: "")
+    fun toResponse(): BudgetRecordData {
+        return BudgetRecordData(
+            year, month, amount, type,
+            authorEntity?.fullName,
+            authorEntity?.creationDateTime?.toString())
     }
 }

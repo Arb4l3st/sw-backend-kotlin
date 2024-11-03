@@ -4,15 +4,14 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import mobi.sevenwinds.app.author.AuthorEntity
 import mobi.sevenwinds.app.author.AuthorTable
-import org.jetbrains.exposed.sql.SortOrder
-import org.jetbrains.exposed.sql.count
-import org.jetbrains.exposed.sql.select
-import org.jetbrains.exposed.sql.sum
+import org.jetbrains.exposed.sql.*
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.like
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 import org.jetbrains.exposed.sql.transactions.transaction
 
 object BudgetService {
-    suspend fun addRecord(body: CreateBudgetRecordData): BudgetRecord = withContext(Dispatchers.IO) {
+    suspend fun addRecord(body: AddBudgetRecordData): BudgetRecordData = withContext(Dispatchers.IO) {
         transaction {
             val entity = BudgetEntity.new {
                 this.year = body.year
@@ -26,18 +25,18 @@ object BudgetService {
         }
     }
 
-    suspend fun getYearStats(param: BudgetYearParam): BudgetYearStatsResponse =
-        newSuspendedTransaction {
+    suspend fun getYearStats(param: BudgetYearParams): BudgetYearStatsData {
+        return newSuspendedTransaction {
             val yearBudgetRecordsPage = getYearBudgetRecordsPage(param)
             val (totalOperationsCountForYear, totalAmountByTypes) = getYearStats(param.year)
 
-            return@newSuspendedTransaction BudgetYearStatsResponse(
+            return@newSuspendedTransaction BudgetYearStatsData(
                 total = totalOperationsCountForYear,
                 totalByType = totalAmountByTypes,
                 items = yearBudgetRecordsPage
             )
         }
-
+    }
 
     private fun getYearStats(year: Int): Pair<Int, Map<String, Int>> {
         val typeColumn = BudgetTable.type
@@ -68,27 +67,26 @@ object BudgetService {
         return totalOperationsCountForYear to totalAmountByTypes
     }
 
-    private fun getYearBudgetRecordsPage(param: BudgetYearParam): List<BudgetRecord> {
-        val defaultSorts = arrayOf(
-            BudgetTable.month to SortOrder.ASC,
-            BudgetTable.amount to SortOrder.DESC
-        )
+    private fun getYearBudgetRecordsPage(param: BudgetYearParams): List<BudgetRecordData> {
+        val yearCondition = BudgetTable.year.eq(param.year)
 
-        val operationsByYearPage = BudgetTable
-            .leftJoin(AuthorTable)
+        val fullCondition = param.authorName?.let { authorName ->
+            yearCondition.and(AuthorTable.fullName like "%$authorName%")
+        } ?: yearCondition
+
+
+        return BudgetTable
+            .leftJoin(AuthorTable, { authorId }, { id })
             .slice(
-                BudgetTable.type,
-                BudgetTable.year,
-                BudgetTable.month,
-                BudgetTable.amount,
-                AuthorTable.fullName,
-                AuthorTable.creationDateTime
-            ).select { BudgetTable.year eq param.year }
-            .orderBy(*defaultSorts)
-            .limit(param.limit, param.offset)
+                BudgetTable.id, BudgetTable.type, BudgetTable.year,
+                BudgetTable.month, BudgetTable.amount, BudgetTable.authorId,
 
-        return BudgetEntity
-            .wrapRows(operationsByYearPage)
+                AuthorTable.fullName, AuthorTable.creationDateTime
+            ).select { fullCondition }
+            .orderBy(
+                BudgetTable.month to SortOrder.ASC, BudgetTable.amount to SortOrder.DESC
+            ).limit(param.limit, param.offset)
+            .map(BudgetEntity.Companion::wrapRow)
             .map(BudgetEntity::toResponse)
     }
 }
