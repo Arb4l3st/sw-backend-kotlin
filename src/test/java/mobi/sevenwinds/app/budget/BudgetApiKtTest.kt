@@ -19,18 +19,18 @@ class BudgetApiKtTest : ServerTest() {
 
     @Test
     fun testBudgetPagination() {
-        addRecord(CreateBudgetRecordData(2020, 5, 10, BudgetType.Приход, authorId = null))
-        addRecord(CreateBudgetRecordData(2020, 5, 5, BudgetType.Приход, authorId = null))
-        addRecord(CreateBudgetRecordData(2020, 5, 20, BudgetType.Приход, authorId = null))
-        addRecord(CreateBudgetRecordData(2020, 5, 30, BudgetType.Приход, authorId = null))
-        addRecord(CreateBudgetRecordData(2020, 5, 40, BudgetType.Приход, authorId = null))
-        addRecord(CreateBudgetRecordData(2030, 1, 1, BudgetType.Расход, authorId = null))
+        addRecord(AddBudgetRecordData(2020, 5, 10, BudgetType.Приход))
+        addRecord(AddBudgetRecordData(2020, 5, 5, BudgetType.Приход))
+        addRecord(AddBudgetRecordData(2020, 5, 20, BudgetType.Приход))
+        addRecord(AddBudgetRecordData(2020, 5, 30, BudgetType.Приход))
+        addRecord(AddBudgetRecordData(2020, 5, 40, BudgetType.Приход))
+        addRecord(AddBudgetRecordData(2030, 1, 1, BudgetType.Расход))
 
         RestAssured.given()
             .queryParam("limit", 3)
             .queryParam("offset", 1)
             .get("/budget/year/2020/stats")
-            .toResponse<BudgetYearStatsResponse>().let { response ->
+            .toResponse<BudgetYearStatsData>().let { response ->
                 println("${response.total} / ${response.items} / ${response.totalByType}")
 
                 Assert.assertEquals(5, response.total)
@@ -41,17 +41,17 @@ class BudgetApiKtTest : ServerTest() {
 
     @Test
     fun testStatsSortOrder() {
-        addRecord(CreateBudgetRecordData(2020, 5, 100, BudgetType.Приход, authorId = null))
-        addRecord(CreateBudgetRecordData(2020, 1, 5, BudgetType.Приход, authorId = null))
-        addRecord(CreateBudgetRecordData(2020, 5, 50, BudgetType.Приход, authorId = null))
-        addRecord(CreateBudgetRecordData(2020, 1, 30, BudgetType.Приход, authorId = null))
-        addRecord(CreateBudgetRecordData(2020, 5, 400, BudgetType.Приход, authorId = null))
+        addRecord(AddBudgetRecordData(2020, 5, 100, BudgetType.Приход))
+        addRecord(AddBudgetRecordData(2020, 1, 5, BudgetType.Приход))
+        addRecord(AddBudgetRecordData(2020, 5, 50, BudgetType.Приход))
+        addRecord(AddBudgetRecordData(2020, 1, 30, BudgetType.Приход))
+        addRecord(AddBudgetRecordData(2020, 5, 400, BudgetType.Приход))
 
         // expected sort order - month ascending, amount descending
 
         RestAssured.given()
             .get("/budget/year/2020/stats?limit=100&offset=0")
-            .toResponse<BudgetYearStatsResponse>().let { response ->
+            .toResponse<BudgetYearStatsData>().let { response ->
                 println(response.items)
 
                 Assert.assertEquals(30, response.items[0].amount)
@@ -65,21 +65,21 @@ class BudgetApiKtTest : ServerTest() {
     @Test
     fun testInvalidMonthValues() {
         RestAssured.given()
-            .jsonBody(CreateBudgetRecordData(2020, -5, 5, BudgetType.Приход, authorId = null))
+            .jsonBody(AddBudgetRecordData(2020, -5, 5, BudgetType.Приход, authorId = null))
             .post("/budget/add")
             .then().statusCode(400)
 
         RestAssured.given()
-            .jsonBody(CreateBudgetRecordData(2020, 15, 5, BudgetType.Приход, authorId = null))
+            .jsonBody(AddBudgetRecordData(2020, 15, 5, BudgetType.Приход, authorId = null))
             .post("/budget/add")
             .then().statusCode(400)
     }
 
-    private fun addRecord(record: CreateBudgetRecordData) {
+    private fun addRecord(record: AddBudgetRecordData) {
         RestAssured.given()
             .jsonBody(record)
             .post("/budget/add")
-            .toResponse<CreateBudgetRecordData>().let { response ->
+            .toResponse<AddBudgetRecordData>().let { response ->
                 Assert.assertEquals(record, response)
             }
     }
