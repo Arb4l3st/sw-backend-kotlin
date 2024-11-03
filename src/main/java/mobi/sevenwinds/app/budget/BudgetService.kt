@@ -7,27 +7,36 @@ import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 
 object BudgetService {
-    suspend fun addRecord(body: AddBudgetRecordData): BudgetRecordData = newSuspendedTransaction {
-        BudgetEntity.new {
-            this.year = body.year
-            this.month = body.month
-            this.amount = body.amount
-            this.type = body.type
-            this.authorEntity = body.authorId?.let { AuthorEntity[it] }
-        }.toResponse()
-    }
+    suspend fun addRecord(body: AddBudgetRecordData): BudgetRecordData =
+        newSuspendedTransaction {
+            BudgetEntity.new {
+                this.year = body.year
+                this.month = body.month
+                this.amount = body.amount
+                this.type = body.type
+                this.authorEntity = body.authorId?.let { AuthorEntity[it] }
+            }.toResponse()
+        }
 
-    suspend fun getYearStats(param: BudgetYearParams): BudgetYearStatsData = newSuspendedTransaction {
-        val yearBudgetRecordsPage = getYearBudgetRecordsPage(param)
-        val (totalOperationsCountForYear, totalAmountByTypes) = getYearStats(param.year)
+    suspend fun getYearStats(param: BudgetYearParams): BudgetYearStatsData =
+        newSuspendedTransaction {
+            val yearBudgetRecordsPage = getYearBudgetRecordsPage(param)
+            val (totalOperationsCountForYear, totalAmountByTypes) = getYearStats(param.year)
 
-        return@newSuspendedTransaction BudgetYearStatsData(
-            total = totalOperationsCountForYear,
-            totalByType = totalAmountByTypes,
-            items = yearBudgetRecordsPage
-        )
-    }
+            return@newSuspendedTransaction BudgetYearStatsData(
+                total = totalOperationsCountForYear,
+                totalByType = totalAmountByTypes,
+                items = yearBudgetRecordsPage
+            )
+        }
 
+
+    /**
+     * @param year Int value of year for fetching statistics.
+     * @return Pair<Int, Map<String, Int>> object containing:
+     *   - first: Total operations count for specified year.
+     *   - second: A map of total year amounts categorized by type.
+     */
     private fun getYearStats(year: Int): Pair<Int, Map<String, Int>> {
         val typeColumn = BudgetTable.type
         val yearColumn = BudgetTable.year
@@ -73,7 +82,7 @@ object BudgetService {
             .map(BudgetEntity::toResponse)
     }
 
-    private fun getWhereCondition(year:Int, authorName:String?): Op<Boolean> {
+    private fun getWhereCondition(year: Int, authorName: String?): Op<Boolean> {
         val yearCondition = BudgetTable.year eq year
 
         return authorName
