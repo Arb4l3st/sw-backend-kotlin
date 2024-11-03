@@ -4,7 +4,6 @@ import mobi.sevenwinds.app.author.AuthorEntity
 import mobi.sevenwinds.app.author.AuthorTable
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
-import org.jetbrains.exposed.sql.SqlExpressionBuilder.like
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 
 object BudgetService {
@@ -75,10 +74,14 @@ object BudgetService {
     }
 
     private fun getWhereCondition(year:Int, authorName:String?): Op<Boolean> {
-        val yearCondition = BudgetTable.year.eq(year)
+        val yearCondition = BudgetTable.year eq year
 
-        return authorName?.let {
-            yearCondition.and(AuthorTable.fullName like "%$it%")
-        } ?: yearCondition
+        return authorName
+            ?.let { yearCondition and (AuthorTable.fullName iLike "%$authorName%") }
+            ?: yearCondition
+    }
+
+    private infix fun Column<String>.iLike(term: String) = Op.build {
+        this@iLike.lowerCase() like term.toLowerCase()
     }
 }
