@@ -6,4 +6,4 @@ COPY build.gradle settings.gradle gradle.properties ./
 COPY src ./src
 RUN gradle build
 
-CMD ["java", "-jar", "build/libs/my-project-2.0-SNAPSHOT.jar"]
+CMD ["java", "-jar", "build/libs/test-budget-0.0.2-SNAPSHOT.jar"]
