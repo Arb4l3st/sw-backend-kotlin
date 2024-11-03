@@ -4,10 +4,15 @@ import kotlinx.coroutines.Dispatchers
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 
 object AuthorService {
-    suspend fun addAuthor(body: CreateAuthorRequestData): AuthorRecord =
+    suspend fun addAuthor(createAuthorRequestData: CreateAuthorRequestData): AuthorRecord =
         newSuspendedTransaction(Dispatchers.IO) {
-            return@newSuspendedTransaction AuthorEntity
-                .new { fullName = body.fullName }
-                .toResponse()
+            val newAuthor = AuthorEntity.new {
+                fullName = createAuthorRequestData.fullName
+            }
+
+            newAuthor.refresh(true)
+
+            return@newSuspendedTransaction newAuthor.toResponse()
         }
+
 }
