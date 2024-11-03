@@ -9,8 +9,8 @@ import com.papsign.ktor.openapigen.route.route
 
 fun NormalOpenAPIRoute.author() {
     route("/author") {
-        route("/add").post<Unit, AuthorRecord, CreateAuthorRequestData>(info("Добавить пользователя")) { _, body ->
-            respond(AuthorService.addAuthor(body))
+        route("/add").post<Unit, AuthorRecord, AddAuthorRecordData>(info("Добавить пользователя")) { _, createAuthorRecordData ->
+            respond(AuthorService.addAuthor(createAuthorRecordData))
         }
     }
 }
@@ -20,7 +20,7 @@ data class AuthorRecord(
     val creationDateTime: String
 )
 
-data class CreateAuthorRequestData(
+data class AddAuthorRecordData(
     @Length(
         min = 1,
         max = 255,

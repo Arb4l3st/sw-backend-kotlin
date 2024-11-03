@@ -1,41 +1,32 @@
 package mobi.sevenwinds.app.budget
 
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 import mobi.sevenwinds.app.author.AuthorEntity
 import mobi.sevenwinds.app.author.AuthorTable
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.like
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
-import org.jetbrains.exposed.sql.transactions.transaction
 
 object BudgetService {
-    suspend fun addRecord(body: AddBudgetRecordData): BudgetRecordData = withContext(Dispatchers.IO) {
-        transaction {
-            val entity = BudgetEntity.new {
-                this.year = body.year
-                this.month = body.month
-                this.amount = body.amount
-                this.type = body.type
-                this.authorEntity = body.authorId?.let { AuthorEntity[it] }
-            }
-
-            return@transaction entity.toResponse()
-        }
+    suspend fun addRecord(body: AddBudgetRecordData): BudgetRecordData = newSuspendedTransaction {
+        BudgetEntity.new {
+            this.year = body.year
+            this.month = body.month
+            this.amount = body.amount
+            this.type = body.type
+            this.authorEntity = body.authorId?.let { AuthorEntity[it] }
+        }.toResponse()
     }
 
-    suspend fun getYearStats(param: BudgetYearParams): BudgetYearStatsData {
-        return newSuspendedTransaction {
-            val yearBudgetRecordsPage = getYearBudgetRecordsPage(param)
-            val (totalOperationsCountForYear, totalAmountByTypes) = getYearStats(param.year)
+    suspend fun getYearStats(param: BudgetYearParams): BudgetYearStatsData = newSuspendedTransaction {
+        val yearBudgetRecordsPage = getYearBudgetRecordsPage(param)
+        val (totalOperationsCountForYear, totalAmountByTypes) = getYearStats(param.year)
 
-            return@newSuspendedTransaction BudgetYearStatsData(
-                total = totalOperationsCountForYear,
-                totalByType = totalAmountByTypes,
-                items = yearBudgetRecordsPage
-            )
-        }
+        return@newSuspendedTransaction BudgetYearStatsData(
+            total = totalOperationsCountForYear,
+            totalByType = totalAmountByTypes,
+            items = yearBudgetRecordsPage
+        )
     }
 
     private fun getYearStats(year: Int): Pair<Int, Map<String, Int>> {
@@ -67,26 +58,27 @@ object BudgetService {
         return totalOperationsCountForYear to totalAmountByTypes
     }
 
-    private fun getYearBudgetRecordsPage(param: BudgetYearParams): List<BudgetRecordData> {
-        val yearCondition = BudgetTable.year.eq(param.year)
-
-        val fullCondition = param.authorName?.let { authorName ->
-            yearCondition.and(AuthorTable.fullName like "%$authorName%")
-        } ?: yearCondition
-
+    private fun getYearBudgetRecordsPage(params: BudgetYearParams): List<BudgetRecordData> {
+        val (year, limit, offset, authorName) = params
 
         return BudgetTable
             .leftJoin(AuthorTable, { authorId }, { id })
             .slice(
                 BudgetTable.id, BudgetTable.type, BudgetTable.year,
                 BudgetTable.month, BudgetTable.amount, BudgetTable.authorId,
-
                 AuthorTable.fullName, AuthorTable.creationDateTime
-            ).select { fullCondition }
-            .orderBy(
-                BudgetTable.month to SortOrder.ASC, BudgetTable.amount to SortOrder.DESC
-            ).limit(param.limit, param.offset)
+            ).select { getWhereCondition(year, authorName) }
+            .orderBy(BudgetTable.month to SortOrder.ASC, BudgetTable.amount to SortOrder.DESC)
+            .limit(limit, offset)
             .map(BudgetEntity.Companion::wrapRow)
             .map(BudgetEntity::toResponse)
+    }
+
+    private fun getWhereCondition(year:Int, authorName:String?): Op<Boolean> {
+        val yearCondition = BudgetTable.year.eq(year)
+
+        return authorName?.let {
+            yearCondition.and(AuthorTable.fullName like "%$it%")
+        } ?: yearCondition
     }
 }
