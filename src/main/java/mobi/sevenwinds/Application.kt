@@ -21,6 +21,7 @@ import mobi.sevenwinds.modules.DatabaseFactory
 import mobi.sevenwinds.modules.initSwagger
 import mobi.sevenwinds.modules.serviceRouting
 import mobi.sevenwinds.modules.swaggerRouting
+import org.jetbrains.exposed.exceptions.ExposedSQLException
 import org.slf4j.LoggerFactory
 import org.slf4j.event.Level
 
@@ -78,6 +79,13 @@ fun Application.module() {
 
     install(StatusPages) {
         val log = LoggerFactory.getLogger("InternalError")
+        val uniqueConstraintViolation = "23505";
+
+        exception<ExposedSQLException> { cause ->
+            if (cause.sqlState == uniqueConstraintViolation) {
+                call.respond(HttpStatusCode.BadRequest, "Unique constraint violation")
+            }
+        }
 
         exception<NotFoundException> { cause ->
             call.respond(HttpStatusCode.NotFound, cause.message ?: "")
