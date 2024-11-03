@@ -1,0 +1,5 @@
+CREATE TABLE author (
+    id SERIAL PRIMARY KEY,
+    fullName VARCHAR(255) NOT NULL,
+    createdAt TIMESTAMP NOT NULL
+);
