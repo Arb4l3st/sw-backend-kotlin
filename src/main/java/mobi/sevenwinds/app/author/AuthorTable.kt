@@ -7,7 +7,7 @@ import org.jetbrains.exposed.dao.IntIdTable
 import org.jetbrains.exposed.sql.CurrentDateTime
 
 object AuthorTable : IntIdTable("author") {
-    val fullName = varchar("full_name", 250).uniqueIndex()
+    val fullName = varchar("full_name", 255).uniqueIndex()
     val creationDateTime = datetime("creation_date_time").defaultExpression(CurrentDateTime())
 }
 

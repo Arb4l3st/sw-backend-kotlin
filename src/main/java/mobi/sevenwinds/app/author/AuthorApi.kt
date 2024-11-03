@@ -1,11 +1,11 @@
 package mobi.sevenwinds.app.author
 
+import com.papsign.ktor.openapigen.annotations.type.string.length.Length
 import com.papsign.ktor.openapigen.route.info
 import com.papsign.ktor.openapigen.route.path.normal.NormalOpenAPIRoute
 import com.papsign.ktor.openapigen.route.path.normal.post
 import com.papsign.ktor.openapigen.route.response.respond
 import com.papsign.ktor.openapigen.route.route
-import org.jetbrains.annotations.NotNull
 
 fun NormalOpenAPIRoute.author() {
     route("/author") {
@@ -21,5 +21,10 @@ data class AuthorRecord(
 )
 
 data class CreateAuthorRequestData(
-    @NotNull val fullName: String,
+    @Length(
+        min = 1,
+        max = 255,
+        errorMessage = "Длинна ФИО должна быть от 1 до 255."
+    )
+    val fullName: String,
 )
