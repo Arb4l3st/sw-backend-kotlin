@@ -7,8 +7,8 @@ import org.jetbrains.exposed.dao.IntIdTable
 import org.jetbrains.exposed.sql.CurrentDateTime
 
 object AuthorTable : IntIdTable("author") {
-    val fullName = varchar("fullName", 250)
-    val creationDateTime = datetime("creationDateTime").defaultExpression(CurrentDateTime())
+    val fullName = varchar("full_name", 250).uniqueIndex()
+    val creationDateTime = datetime("creation_date_time").defaultExpression(CurrentDateTime())
 }
 
 class AuthorEntity(id: EntityID<Int>) : IntEntity(id) {
@@ -18,6 +18,6 @@ class AuthorEntity(id: EntityID<Int>) : IntEntity(id) {
     var creationDateTime by AuthorTable.creationDateTime
 
     fun toResponse(): AuthorRecord {
-        return AuthorRecord(fullName, creationDateTime)
+        return AuthorRecord(fullName, creationDateTime.toString())
     }
 }
