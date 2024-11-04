@@ -65,12 +65,12 @@ class BudgetApiKtTest : ServerTest() {
     @Test
     fun testInvalidMonthValues() {
         RestAssured.given()
-            .jsonBody(AddBudgetRecordData(2020, -5, 5, BudgetType.Приход, authorId = null))
+            .jsonBody(AddBudgetRecordData(2020, -5, 5, BudgetType.Приход))
             .post("/budget/add")
             .then().statusCode(400)
 
         RestAssured.given()
-            .jsonBody(AddBudgetRecordData(2020, 15, 5, BudgetType.Приход, authorId = null))
+            .jsonBody(AddBudgetRecordData(2020, 15, 5, BudgetType.Приход))
             .post("/budget/add")
             .then().statusCode(400)
     }

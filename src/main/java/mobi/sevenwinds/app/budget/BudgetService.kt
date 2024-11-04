@@ -1,5 +1,6 @@
 package mobi.sevenwinds.app.budget
 
+import kotlinx.coroutines.Dispatchers
 import mobi.sevenwinds.app.author.AuthorEntity
 import mobi.sevenwinds.app.author.AuthorTable
 import org.jetbrains.exposed.sql.*
@@ -8,7 +9,7 @@ import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransacti
 
 object BudgetService {
     suspend fun addRecord(body: AddBudgetRecordData): BudgetRecordData =
-        newSuspendedTransaction {
+        newSuspendedTransaction(Dispatchers.IO) {
             BudgetEntity.new {
                 this.year = body.year
                 this.month = body.month
@@ -19,9 +20,9 @@ object BudgetService {
         }
 
     suspend fun getYearStats(param: BudgetYearParams): BudgetYearStatsData =
-        newSuspendedTransaction {
-            val yearBudgetRecordsPage = getYearBudgetRecordsPage(param)
+        newSuspendedTransaction(Dispatchers.IO) {
             val (totalOperationsCountForYear, totalAmountByTypes) = getYearStats(param.year)
+            val yearBudgetRecordsPage = getYearBudgetRecordsPage(param)
 
             return@newSuspendedTransaction BudgetYearStatsData(
                 total = totalOperationsCountForYear,
