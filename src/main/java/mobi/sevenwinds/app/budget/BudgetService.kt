@@ -2,6 +2,8 @@ package mobi.sevenwinds.app.budget
 
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import mobi.sevenwinds.app.author.AuthorTable
+import org.jetbrains.exposed.dao.EntityID
 import org.jetbrains.exposed.sql.SortOrder
 import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.sum
@@ -15,6 +17,7 @@ object BudgetService {
                 this.month = body.month
                 this.amount = body.amount
                 this.type = body.type
+                this.authorId = body.authorId?.let { EntityID(it, AuthorTable) }
             }
 
             return@transaction entity.toResponse()
@@ -30,7 +33,11 @@ object BudgetService {
                 .limit(param.limit, param.offset)
                 .orderBy(BudgetTable.month to SortOrder.ASC, BudgetTable.amount to SortOrder.DESC)
 
-            val data = BudgetEntity.wrapRows(query).map { it.toResponse() }
+            val data = BudgetEntity.wrapRows(query).map { it.toResponse() }.filter {
+                if(param.fio == null) {return@filter true}
+                if(it.authorId == null) {return@filter false}
+                return@filter it.authorFIO!!.toLowerCase().contains(param.fio.toLowerCase())
+            }
 
             val sumByType = BudgetTable
                 .slice(BudgetTable.type, BudgetTable.amount.sum())
