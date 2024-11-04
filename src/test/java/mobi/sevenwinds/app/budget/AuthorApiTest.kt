@@ -14,7 +14,7 @@ import org.junit.Assert
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 
-class AuthorAouTest : ServerTest() {
+class AuthorApiTest : ServerTest() {
 
     @BeforeEach
     internal fun setUp() {
@@ -23,7 +23,6 @@ class AuthorAouTest : ServerTest() {
 
     private fun addUserRecordAndTestCreationResult(addAuthorRecordData: AddAuthorRecordData) {
         val currentDate = DateTime().toLocalDate()
-        val millis500 = 500
 
         RestAssured.given()
             .jsonBody(addAuthorRecordData)

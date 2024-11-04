@@ -1,10 +1,13 @@
 package mobi.sevenwinds.app.budget
 
 import io.restassured.RestAssured
+import mobi.sevenwinds.app.author.AuthorEntity
+import mobi.sevenwinds.app.author.AuthorTable
 import mobi.sevenwinds.common.ServerTest
 import mobi.sevenwinds.common.jsonBody
 import mobi.sevenwinds.common.toResponse
-import org.jetbrains.exposed.sql.deleteAll
+import org.jetbrains.exposed.dao.EntityID
+import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.junit.Assert
 import org.junit.jupiter.api.BeforeEach
@@ -14,7 +17,10 @@ class BudgetApiKtTest : ServerTest() {
 
     @BeforeEach
     internal fun setUp() {
-        transaction { BudgetTable.deleteAll() }
+        transaction {
+            BudgetTable.deleteAll()
+            AuthorTable.deleteAll()
+        }
     }
 
     @Test
@@ -73,6 +79,63 @@ class BudgetApiKtTest : ServerTest() {
             .jsonBody(AddBudgetRecordData(2020, 15, 5, BudgetType.Приход))
             .post("/budget/add")
             .then().statusCode(400)
+    }
+
+    @Test
+    fun testAuthorSpecification() {
+        val testUserFullName = transaction {
+            AuthorEntity.new { fullName = "Samuel Jakob Jefferson" }
+        }
+
+        RestAssured.given()
+            .jsonBody(AddBudgetRecordData(2020, 5, 10, BudgetType.Приход, testUserFullName.id.value))
+            .post("/budget/add")
+            .toResponse<BudgetRecordData>().let { response ->
+                Assert.assertEquals(response.authorName, testUserFullName.fullName)
+                Assert.assertEquals(response.authorCreationDate, testUserFullName.creationDateTime.toString())
+            }
+    }
+
+    @Test
+    fun testInvalidAuthorId() {
+        val nonExistentId = 999999999
+        RestAssured.given()
+            .jsonBody(AddBudgetRecordData(2020, 5, 10, BudgetType.Приход, nonExistentId))
+            .post("/budget/add")
+            .then().statusCode(400)
+    }
+
+    @Test
+    fun testUserFilter() {
+        //given
+        val ivanNames = listOf("Ivan John Ivan", "Patrick Ivan Petrov", "Samuel Ivan Jefferson")
+
+        val ivanContainingInNameAuthors = transaction {
+            return@transaction ivanNames.map { name -> AuthorEntity.new { fullName = name } }
+        }
+
+        for (ivan in ivanContainingInNameAuthors) {
+            addRecord(AddBudgetRecordData(2020, 12, 1200, BudgetType.Приход, ivan.id.value))
+        }
+
+        val author4notContainingIvan = transaction {
+            AuthorEntity.new { fullName = "Samuel Jakob Jefferson" }
+        }
+
+        addRecord(AddBudgetRecordData(2020, 12, 1200, BudgetType.Приход, author4notContainingIvan.id.value))
+
+        //check
+        RestAssured.given()
+            .queryParam("limit", 10)
+            .queryParam("authorName", "ivan")
+            .queryParam("offset", 0)
+            .get("/budget/year/2020/stats")
+            .toResponse<BudgetYearStatsData>().let { response ->
+                response.items.forEach {
+                    Assert.assertTrue(ivanNames.contains(it.authorName))
+                    Assert.assertFalse(ivanNames.contains(author4notContainingIvan.fullName))
+                }
+            }
     }
 
     private fun addRecord(record: AddBudgetRecordData) {
