@@ -21,6 +21,13 @@ class AuthorApiTest : ServerTest() {
         transaction { AuthorTable.deleteAll() }
     }
 
+    @Test
+    fun testAuthorCreationDate() {
+        addUserRecordAndTestCreationResult(AddAuthorRecordData("Ivan John Petrov"))
+        addUserRecordAndTestCreationResult(AddAuthorRecordData("Nikolay Daniel Kozlov"))
+        addUserRecordAndTestCreationResult(AddAuthorRecordData("Massimo Joseph Magrini"))
+    }
+
     private fun addUserRecordAndTestCreationResult(addAuthorRecordData: AddAuthorRecordData) {
         val currentDate = DateTime().toLocalDate()
 
@@ -34,12 +41,5 @@ class AuthorApiTest : ServerTest() {
 
                 Assert.assertEquals(currentDate, creationDate)
             }
-    }
-
-    @Test
-    fun testAuthorCreationDate() {
-        addUserRecordAndTestCreationResult(AddAuthorRecordData("Ivan John Petrov"))
-        addUserRecordAndTestCreationResult(AddAuthorRecordData("Nikolay Daniel Kozlov"))
-        addUserRecordAndTestCreationResult(AddAuthorRecordData("Massimo Joseph Magrini"))
     }
 }
