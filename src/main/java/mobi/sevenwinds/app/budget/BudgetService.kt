@@ -1,11 +1,13 @@
 package mobi.sevenwinds.app.budget
 
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.selects.SelectClause1
 import mobi.sevenwinds.app.author.AuthorEntity
 import mobi.sevenwinds.app.author.AuthorTable
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
+import org.jetbrains.exposed.sql.transactions.experimental.suspendedTransactionAsync
 
 object BudgetService {
     suspend fun addRecord(body: AddBudgetRecordData): BudgetRecordData =
@@ -19,17 +21,27 @@ object BudgetService {
             }.toResponse()
         }
 
-    suspend fun getYearStats(param: BudgetYearParams): BudgetYearStatsData =
-        newSuspendedTransaction(Dispatchers.IO) {
-            val (totalOperationsCountForYear, totalAmountByTypes) = getYearStats(param.year)
-            val yearBudgetRecordsPage = getYearBudgetRecordsPage(param)
+    suspend fun getYearStats(params: BudgetYearParams): BudgetYearStatsData {
+        val (year, limit, offset, authorName) = params
 
-            return@newSuspendedTransaction BudgetYearStatsData(
-                total = totalOperationsCountForYear,
-                totalByType = totalAmountByTypes,
-                items = yearBudgetRecordsPage
-            )
-        }
+        val yearStatsDeferred =
+            suspendedTransactionAsync(Dispatchers.IO) {
+                getYearStats(year)
+            }
+
+        val yearBudgetRecordsPage =
+            newSuspendedTransaction(Dispatchers.IO) {
+                getYearBudgetRecordsPage(year, limit, offset, authorName)
+            }
+
+        val (total, totalAmountByTypes) = yearStatsDeferred.await()
+
+        return BudgetYearStatsData(
+            total = total,
+            totalByType = totalAmountByTypes,
+            items = yearBudgetRecordsPage
+        )
+    }
 
 
     /**
@@ -67,9 +79,12 @@ object BudgetService {
         return totalOperationsCountForYear to totalAmountByTypes
     }
 
-    private fun getYearBudgetRecordsPage(params: BudgetYearParams): List<BudgetRecordData> {
-        val (year, limit, offset, authorName) = params
-
+    private fun getYearBudgetRecordsPage(
+        year: Int,
+        limit: Int,
+        offset: Int,
+        authorName: String?
+    ): List<BudgetRecordData> {
         return BudgetTable
             .leftJoin(AuthorTable, { authorId }, { id })
             .slice(
