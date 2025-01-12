@@ -29,7 +29,6 @@ object DatabaseFactory {
         if (appConfig.property("flyway.clean").getString().toBoolean()) {
             flyway.clean() // clean existing tables before migration applying
         }
-
         flyway.migrate()
     }
 
