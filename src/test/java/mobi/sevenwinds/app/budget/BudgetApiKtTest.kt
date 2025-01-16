@@ -1,6 +1,8 @@
 package mobi.sevenwinds.app.budget
 
 import io.restassured.RestAssured
+import mobi.sevenwinds.app.author.AuthorRecord
+import mobi.sevenwinds.app.author.AuthorResponse
 import mobi.sevenwinds.common.ServerTest
 import mobi.sevenwinds.common.jsonBody
 import mobi.sevenwinds.common.toResponse
@@ -75,12 +77,96 @@ class BudgetApiKtTest : ServerTest() {
             .then().statusCode(400)
     }
 
-    private fun addRecord(record: BudgetRecord) {
+    @Test
+    fun testProvideAuthor() {
+        val author = addRecord(AuthorRecord("Жеглов Глеб Грегорьевич"))
+        val record = BudgetRecord(2020, 5, 100, BudgetType.Приход, author.id)
+        val budget = addRecord(record)
+
+        val expected = BudgetRecord(
+            record.year, record.month, record.amount, record.type,
+            author.id, author.fio, author.created)
+
+        Assert.assertEquals(expected, budget)
+    }
+
+    @Test
+    fun testStatsWithAuthors() {
+        val author1 = addRecord(AuthorRecord("Жеглов Глеб Грегорьевич"))
+        val author2 = addRecord(AuthorRecord("Шарапов Владимир Иванович"))
+
+        addRecord(BudgetRecord(2020, 1, 30, BudgetType.Приход, author1.id))
+        addRecord(BudgetRecord(2020, 1, 5, BudgetType.Приход, author1.id))
+        addRecord(BudgetRecord(2020, 4, 400, BudgetType.Приход))
+        addRecord(BudgetRecord(2020, 5, 100, BudgetType.Приход, author2.id))
+        addRecord(BudgetRecord(2020, 5, 50, BudgetType.Приход, author2.id))
+
         RestAssured.given()
-            .jsonBody(record)
-            .post("/budget/add")
-            .toResponse<BudgetRecord>().let { response ->
-                Assert.assertEquals(record, response)
+            .get("/budget/year/2020/stats?limit=100&offset=0")
+            .toResponse<BudgetYearStatsResponse>().let { response ->
+                println(response.items)
+
+                (0..1).forEach{ i ->
+                    response.items[i].let {
+                        Assert.assertEquals(author1.fio, it.authorFIO)
+                        Assert.assertEquals(author1.created, it.authorCreated)
+                    }
+                }
+
+                response.items[2].let {
+                    Assert.assertNull(it.authorFIO)
+                    Assert.assertNull(it.authorCreated)
+                }
+
+                (3..4).forEach{ i ->
+                    response.items[i].let {
+                        Assert.assertEquals(author2.fio, it.authorFIO)
+                        Assert.assertEquals(author2.created, it.authorCreated)
+                    }
+                }
             }
     }
+
+    @Test
+    fun testStatsFilteredByAuthor() {
+        val author1 = addRecord(AuthorRecord("Жеглов Глеб Грегорьевич"))
+        val author2 = addRecord(AuthorRecord("Шарапов Владимир Иванович"))
+
+        addRecord(BudgetRecord(2020, 1, 30, BudgetType.Приход, author1.id))
+        addRecord(BudgetRecord(2020, 1, 5, BudgetType.Приход, author1.id))
+        addRecord(BudgetRecord(2020, 4, 400, BudgetType.Приход))
+        addRecord(BudgetRecord(2020, 5, 100, BudgetType.Приход, author2.id))
+        addRecord(BudgetRecord(2020, 5, 50, BudgetType.Приход, author2.id))
+
+        RestAssured.given()
+            .get("/budget/year/2020/stats?limit=100&offset=0&fio=жеглов")
+            .toResponse<BudgetYearStatsResponse>().let { response ->
+                println(response)
+
+                Assert.assertEquals(2, response.total)
+                Assert.assertEquals(2, response.items.size)
+                (0..1).forEach{ i ->
+                    response.items[i].let {
+                        Assert.assertEquals(author1.fio, it.authorFIO)
+                        Assert.assertEquals(author1.created, it.authorCreated)
+                    }
+                }
+                Assert.assertEquals(35, response.totalByType[BudgetType.Приход.name])
+            }
+    }
+
+    private fun addRecord(record: BudgetRecord): BudgetRecord {
+        return RestAssured.given()
+            .jsonBody(record)
+            .post("/budget/add")
+            .toResponse<BudgetRecord>()
+    }
+
+    private fun addRecord(record: AuthorRecord): AuthorResponse {
+        return RestAssured.given()
+            .jsonBody(record)
+            .post("/author/add")
+            .toResponse<AuthorResponse>()
+    }
+
 }

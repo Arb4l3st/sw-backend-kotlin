@@ -7,9 +7,11 @@ import io.ktor.application.*
 import io.ktor.response.*
 import io.ktor.routing.*
 import mobi.sevenwinds.app.budget.budget
+import mobi.sevenwinds.app.author.author
 
 fun NormalOpenAPIRoute.swaggerRouting() {
     tag(SwaggerTag.Бюджет) { budget() }
+    tag(SwaggerTag.Автор) { author() }
 }
 
 fun Routing.serviceRouting() {
