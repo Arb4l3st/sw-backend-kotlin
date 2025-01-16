@@ -2,6 +2,7 @@ package mobi.sevenwinds.app.budget
 
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import mobi.sevenwinds.app.author.AuthorEntity
 import mobi.sevenwinds.app.author.AuthorTable
 import org.jetbrains.exposed.dao.EntityID
 import org.jetbrains.exposed.sql.SortOrder
@@ -19,7 +20,11 @@ object BudgetService {
                 this.authorId = body.authorId?.let { EntityID(it, AuthorTable) }
             }
 
-            return@transaction entity.toResponse()
+            val author = entity.authorId?.let {
+                AuthorEntity.findById(it)
+            }
+
+            return@transaction entity.toResponse(author)
         }
     }
 
@@ -35,11 +40,16 @@ object BudgetService {
 
             val total = query.count()
 
-            var data = BudgetEntity.wrapRows(query).map { it.toResponse() }
+            var data = BudgetEntity.wrapRows(query).map { it.toResponse(null) }
             val sumByType = data.groupBy { it.type.name }.mapValues { it.value.sumOf { v -> v.amount } }
 
             query.limit(param.limit, param.offset)
-            data = BudgetEntity.wrapRows(query).map { it.toResponse() }
+            data = BudgetEntity.wrapRows(query).map { r ->
+                val author = r.authorId?.let {
+                    AuthorEntity.findById(it)
+                }
+                r.toResponse(author)
+            }
 
             return@transaction BudgetYearStatsResponse(
                 total = total,

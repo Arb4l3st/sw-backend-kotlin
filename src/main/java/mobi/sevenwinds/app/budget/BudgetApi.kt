@@ -30,7 +30,9 @@ data class BudgetRecord(
     @Min(1) @Max(12) val month: Int,
     @Min(1) val amount: Int,
     val type: BudgetType,
-    val authorId: Int? = null
+    val authorId: Int? = null,
+    val authorFIO: String? = null,
+    val authorCreated: String? = null,
 )
 
 data class BudgetYearParam(
