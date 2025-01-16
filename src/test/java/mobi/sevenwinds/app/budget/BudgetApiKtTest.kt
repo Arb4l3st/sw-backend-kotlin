@@ -1,6 +1,8 @@
 package mobi.sevenwinds.app.budget
 
 import io.restassured.RestAssured
+import mobi.sevenwinds.app.author.AuthorRecord
+import mobi.sevenwinds.app.author.AuthorResponse
 import mobi.sevenwinds.common.ServerTest
 import mobi.sevenwinds.common.jsonBody
 import mobi.sevenwinds.common.toResponse
@@ -75,12 +77,30 @@ class BudgetApiKtTest : ServerTest() {
             .then().statusCode(400)
     }
 
-    private fun addRecord(record: BudgetRecord) {
-        RestAssured.given()
+    @Test
+    fun testProvideAuthor() {
+        val author = addRecord(AuthorRecord("Жеглов Глеб Грегорьевич"))
+        val budget = addRecord(
+            BudgetRecord(2020, 5, 100, BudgetType.Приход, author.id))
+        Assert.assertEquals(author.id, budget.authorId)
+    }
+
+    private fun addRecord(record: BudgetRecord): BudgetRecord {
+        val response = RestAssured.given()
             .jsonBody(record)
             .post("/budget/add")
-            .toResponse<BudgetRecord>().let { response ->
-                Assert.assertEquals(record, response)
-            }
+            .toResponse<BudgetRecord>()
+
+        Assert.assertEquals(record, response)
+
+        return response
     }
+
+    private fun addRecord(record: AuthorRecord): AuthorResponse {
+        return RestAssured.given()
+            .jsonBody(record)
+            .post("/author/add")
+            .toResponse<AuthorResponse>()
+    }
+
 }

@@ -17,6 +17,6 @@ class AuthorEntity(id: EntityID<Int>) : IntEntity(id) {
     var created by AuthorTable.created
 
     fun toResponse(): AuthorResponse {
-        return AuthorResponse(fio, created.toString())
+        return AuthorResponse(id.value, fio, created.toString())
     }
 }

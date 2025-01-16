@@ -19,6 +19,7 @@ data class AuthorRecord(
 )
 
 data class AuthorResponse(
+    val id: Int,
     val fio: String,
     val created: String
 )

@@ -27,6 +27,7 @@ class AuthorApiKtTest : ServerTest() {
 
         addRecord(record).let {
             println(it)
+            Assert.assertTrue(it.id > 0)
             Assert.assertEquals(it.fio, record.fio)
             Assert.assertTrue(DateTime.parse(it.created).isAfter(before))
         }
