@@ -2,7 +2,10 @@ package mobi.sevenwinds.app.budget
 
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import org.jetbrains.exposed.sql.select
+import mobi.sevenwinds.app.author.AuthorTable
+import mobi.sevenwinds.app.budget.BudgetTable.authorId
+import org.jetbrains.exposed.dao.EntityID
+import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.transactions.transaction
 
 object BudgetService {
@@ -13,6 +16,7 @@ object BudgetService {
                 this.month = body.month
                 this.amount = body.amount
                 this.type = body.type
+                this.authorId = body.authorId?.let { EntityID(it, AuthorTable) }
             }
 
             return@transaction entity.toResponse()
@@ -21,14 +25,33 @@ object BudgetService {
 
     suspend fun getYearStats(param: BudgetYearParam): BudgetYearStatsResponse = withContext(Dispatchers.IO) {
         transaction {
-            val query = BudgetTable
+            val query = Join(
+                BudgetTable,
+                AuthorTable,
+                onColumn = authorId,
+                otherColumn = AuthorTable.id,
+                joinType = JoinType.LEFT
+            )
                 .select { BudgetTable.year eq param.year }
-                .limit(param.limit, param.offset)
 
             val total = query.count()
-            val data = BudgetEntity.wrapRows(query).map { it.toResponse() }
 
-            val sumByType = data.groupBy { it.type.name }.mapValues { it.value.sumOf { v -> v.amount } }
+            query
+                .limit(param.limit, param.offset)
+                .orderBy(BudgetTable.month to SortOrder.ASC, BudgetTable.amount to SortOrder.DESC)
+
+            val data = BudgetEntity.wrapRows(query)
+                .map { it.toResponse() }
+                .filter { response ->
+                    param.fio == null || (response.authorId != null && response.authorFio?.toLowerCase()
+                        ?.contains(param.fio.toLowerCase()) == true)
+                }
+
+            val sumByType = BudgetTable
+                .slice(BudgetTable.type, BudgetTable.amount.sum())
+                .select { BudgetTable.year eq param.year }
+                .groupBy(BudgetTable.type)
+                .associate { it[BudgetTable.type].name to it[BudgetTable.amount.sum()]!! }
 
             return@transaction BudgetYearStatsResponse(
                 total = total,
