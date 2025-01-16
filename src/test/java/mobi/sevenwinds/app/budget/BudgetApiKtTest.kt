@@ -101,8 +101,6 @@ class BudgetApiKtTest : ServerTest() {
         addRecord(BudgetRecord(2020, 5, 100, BudgetType.Приход, author2.id))
         addRecord(BudgetRecord(2020, 5, 50, BudgetType.Приход, author2.id))
 
-        // expected sort order - month ascending, amount descending
-
         RestAssured.given()
             .get("/budget/year/2020/stats?limit=100&offset=0")
             .toResponse<BudgetYearStatsResponse>().let { response ->
@@ -126,6 +124,34 @@ class BudgetApiKtTest : ServerTest() {
                         Assert.assertEquals(author2.created, it.authorCreated)
                     }
                 }
+            }
+    }
+
+    @Test
+    fun testStatsFilteredByAuthor() {
+        val author1 = addRecord(AuthorRecord("Жеглов Глеб Грегорьевич"))
+        val author2 = addRecord(AuthorRecord("Шарапов Владимир Иванович"))
+
+        addRecord(BudgetRecord(2020, 1, 30, BudgetType.Приход, author1.id))
+        addRecord(BudgetRecord(2020, 1, 5, BudgetType.Приход, author1.id))
+        addRecord(BudgetRecord(2020, 4, 400, BudgetType.Приход))
+        addRecord(BudgetRecord(2020, 5, 100, BudgetType.Приход, author2.id))
+        addRecord(BudgetRecord(2020, 5, 50, BudgetType.Приход, author2.id))
+
+        RestAssured.given()
+            .get("/budget/year/2020/stats?limit=100&offset=0&fio=жеглов")
+            .toResponse<BudgetYearStatsResponse>().let { response ->
+                println(response)
+
+                Assert.assertEquals(2, response.total)
+                Assert.assertEquals(2, response.items.size)
+                (0..1).forEach{ i ->
+                    response.items[i].let {
+                        Assert.assertEquals(author1.fio, it.authorFIO)
+                        Assert.assertEquals(author1.created, it.authorCreated)
+                    }
+                }
+                Assert.assertEquals(35, response.totalByType[BudgetType.Приход.name])
             }
     }
 
