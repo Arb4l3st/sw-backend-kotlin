@@ -9,6 +9,7 @@ plugins {
     application
     kotlin("jvm") version "1.4.32"
     id("com.github.johnrengelman.shadow") version "5.0.0"
+    id("org.flywaydb.flyway") version "9.10.0"
 }
 
 group = "mobi.sevenwinds"
@@ -51,7 +52,7 @@ dependencies {
 
     implementation("org.jetbrains.exposed:exposed:0.17.13")
     implementation("com.zaxxer:HikariCP:2.7.8")
-    implementation("org.flywaydb:flyway-core:5.2.4")
+    implementation("org.flywaydb:flyway-core:9.10.0")
 
     implementation("com.squareup.retrofit2:retrofit:2.3.0")
     implementation("com.squareup.retrofit2:converter-jackson:2.3.0")
@@ -83,4 +84,11 @@ tasks.withType<Test> {
 tasks.withType<KotlinCompile> {
     kotlinOptions.freeCompilerArgs += "-Xuse-experimental=kotlin.ExperimentalStdlibApi"
     kotlinOptions.jvmTarget = JavaVersion.VERSION_1_8.toString()
+}
+
+flyway {
+    url = "jdbc:postgresql://localhost:5432/dev_mem"
+    user = "dev"
+    password = "dev"
+    schemas = arrayOf("public")
 }
