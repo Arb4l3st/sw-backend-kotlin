@@ -3,6 +3,7 @@ package mobi.sevenwinds
 import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.databind.SerializationFeature
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module
+import com.fasterxml.jackson.datatype.joda.JodaModule
 import com.fasterxml.jackson.module.kotlin.MissingKotlinParameterException
 import com.papsign.ktor.openapigen.annotations.type.common.ConstraintViolation
 import com.papsign.ktor.openapigen.exceptions.OpenAPIRequiredFieldException
@@ -23,6 +24,8 @@ import mobi.sevenwinds.modules.serviceRouting
 import mobi.sevenwinds.modules.swaggerRouting
 import org.slf4j.LoggerFactory
 import org.slf4j.event.Level
+import java.text.SimpleDateFormat
+import java.util.*
 
 fun main(args: Array<String>): Unit = EngineMain.main(args)
 
@@ -39,6 +42,9 @@ fun Application.module() {
             enable(SerializationFeature.INDENT_OUTPUT)
             configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
             registerModule(Jdk8Module())
+            registerModule(JodaModule())
+
+            dateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
         }
     }
 

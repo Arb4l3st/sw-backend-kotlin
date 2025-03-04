@@ -7,7 +7,7 @@ val logback_version: String by project
 
 plugins {
     application
-    kotlin("jvm") version "1.4.32"
+    kotlin("jvm") version "1.8.0"
     id("com.github.johnrengelman.shadow") version "5.0.0"
 }
 
@@ -64,6 +64,8 @@ dependencies {
     testImplementation("org.assertj:assertj-core:3.19.0")
     testImplementation("io.rest-assured:rest-assured:4.3.3")
     testImplementation("org.hamcrest:hamcrest:2.2")
+
+    implementation("com.fasterxml.jackson.datatype:jackson-datatype-joda:2.18.3") // DateTime formatter
 }
 
 tasks.withType<Jar> {
