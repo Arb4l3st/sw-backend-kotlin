@@ -22,12 +22,11 @@ object DatabaseFactory {
 
         val flyway = Flyway.configure().dataSource(dbUrl, dbUser, dbPassword)
             .locations("classpath:db/migration")
-//            .baselineOnMigrate(true)
             .outOfOrder(true)
             .load()
 
         if (appConfig.property("flyway.clean").getString().toBoolean()) {
-            flyway.clean() // clean existing tables before migration applying
+            flyway.clean()
         }
 
         flyway.migrate()
