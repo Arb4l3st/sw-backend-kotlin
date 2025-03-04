@@ -1,0 +1,1 @@
+UPDATE budget_type SET name = 'Расход' WHERE name = 'Комиссия';

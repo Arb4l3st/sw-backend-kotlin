@@ -11,7 +11,6 @@ import kotlin.reflect.KType
 fun Application.initSwagger() {
 
     install(OpenAPIGen) {
-        // basic info
         info {
             version = Const.version
             title = "Construction Dashboard"
