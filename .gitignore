@@ -7,3 +7,6 @@
 *.iws
 
 /logs/
+
+# Credential data and other non-public files and folders
+**/hidden-docker-env.env

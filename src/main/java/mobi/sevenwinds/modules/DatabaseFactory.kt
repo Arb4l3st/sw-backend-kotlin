@@ -8,7 +8,7 @@ import org.jetbrains.exposed.sql.Database
 
 object DatabaseFactory {
 
-    lateinit var appConfig: ApplicationConfig
+    private lateinit var appConfig: ApplicationConfig
 
     private val dbDriver: String by lazy { appConfig.property("db.jdbcDriver").getString() }
     private val dbUrl: String by lazy { appConfig.property("db.jdbcUrl").getString() }
