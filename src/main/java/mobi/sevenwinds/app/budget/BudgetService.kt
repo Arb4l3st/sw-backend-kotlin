@@ -34,23 +34,19 @@ object BudgetService {
 
     suspend fun getYearStats(param: BudgetYearParam): BudgetYearStatsResponse = withContext(Dispatchers.IO) {
         transaction {
-            val query = BudgetTable
-                .join(
-                    joinType = JoinType.LEFT,
-                    onColumn = BudgetTable.authorId,
-                    otherTable = AuthorTable,
-                    otherColumn = AuthorTable.id
-                ).select { BudgetTable.year eq param.year }
-                .orderBy(BudgetTable.month to SortOrder.ASC, BudgetTable.amount to SortOrder.DESC)
+            val query = (BudgetTable leftJoin AuthorTable).select {
+                BudgetTable.year eq param.year
+            }.orderBy(BudgetTable.month to SortOrder.ASC, BudgetTable.amount to SortOrder.DESC)
 
-            val total = query.count()
-            val data = query.map(ResultRow::toBudgetResponse)
-
-            val sumByType = data.groupBy { it.type.name }.mapValues { it.value.sumOf { v -> v.amount } }
+            val data = query.filter { resultRow ->
+                val cleanFilter = param.filter?.trim().orEmpty()
+                val authorName = resultRow.getOrNull(AuthorTable.fullName)
+                param.filter == null || authorName?.contains(other = cleanFilter, ignoreCase = true) == true
+            }.map(ResultRow::toBudgetResponse)
 
             return@transaction BudgetYearStatsResponse(
-                total = total,
-                totalByType = sumByType,
+                total = query.count(),
+                totalByType = data.groupBy { it.type.name }.mapValues { it.value.sumOf { v -> v.amount } },
                 items = data.asSequence().drop(param.offset).take(param.limit).toList()
             )
         }

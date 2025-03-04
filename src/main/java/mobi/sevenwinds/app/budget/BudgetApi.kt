@@ -47,9 +47,14 @@ data class BudgetResponse(
 )
 
 data class BudgetYearParam(
-    @PathParam("Год") val year: Int,
-    @QueryParam("Лимит пагинации") val limit: Int,
-    @QueryParam("Смещение пагинации") val offset: Int,
+    @PathParam(description = "Год")
+    val year: Int,
+    @QueryParam(description = "Лимит пагинации")
+    val limit: Int,
+    @QueryParam(description = "Смещение пагинации")
+    val offset: Int,
+    @QueryParam(description = "Фильтра по ФИО автора")
+    val filter: String?,
 )
 
 class BudgetYearStatsResponse(
