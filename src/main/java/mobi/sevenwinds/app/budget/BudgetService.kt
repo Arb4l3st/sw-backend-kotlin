@@ -28,7 +28,6 @@ object BudgetService {
 
     suspend fun getYearStats(param: BudgetYearParam): BudgetYearStatsResponse = withContext(Dispatchers.IO) {
         transaction {
-            val data = findBudgetStats(param)
             val (count, sum, type) = arrayOf(BudgetTable.id.count(), BudgetTable.amount.sum(), BudgetTable.type)
             val totalStats = BudgetTable.slice(count, sum, type).selectAll().groupBy(BudgetTable.type).map { row ->
                 TemporaryStats(
@@ -41,12 +40,12 @@ object BudgetService {
             BudgetYearStatsResponse(
                 total = totalStats.first { it.budgetType == BudgetType.Приход }.count,
                 totalByType = totalStats.groupBy({ it.budgetType.name }, { it.sum }).mapValues { it.value.sum() },
-                items = data
+                items = findBudgetStats(param)
             )
         }
     }
 
-    fun findBudgetStats(param: BudgetYearParam): List<BudgetResponse> =
+    private fun findBudgetStats(param: BudgetYearParam): List<BudgetResponse> =
         (BudgetTable leftJoin AuthorTable).select {
             val mainExpression = BudgetTable.year eq param.year
             val optionalExpression = (AuthorTable.fullName.lowerCase() like "%${param.filter?.lowercase()}%")
