@@ -25,6 +25,7 @@ object DatabaseFactory {
 //            .baselineOnMigrate(true)
             .outOfOrder(true)
             .load()
+
         if (appConfig.property("flyway.clean").getString().toBoolean()) {
             flyway.clean() // clean existing tables before migration applying
         }
