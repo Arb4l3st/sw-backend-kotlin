@@ -18,7 +18,10 @@ fun NormalOpenAPIRoute.author() {
 }
 
 data class AuthorRequest(
-    @RegularExpression(pattern = "^[А-Я][а-я]* [А-Я][а-я]*( [А-Я][а-я]*)?$")
+    @RegularExpression(
+        pattern = "^[А-Я][а-я]* [А-Я][а-я]*( [А-Я][а-я]*)?$",
+        errorMessage = "ФИО должно быть в формате Фамилия Имя Отчество(если есть)."
+    )
     val fullName: String
 )
 
@@ -27,3 +30,10 @@ data class AuthorResponse(
     val creationDate: DateTime,
     val fullName: String
 )
+
+fun AuthorRequest.toResponse(id: UUID, creationDate: DateTime): AuthorResponse =
+    AuthorResponse(
+        id = id,
+        creationDate = creationDate,
+        fullName = fullName
+    )

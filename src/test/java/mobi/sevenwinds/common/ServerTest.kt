@@ -52,15 +52,12 @@ open class ServerTest {
                     RestAssured.port = server.environment.config.property("ktor.deployment.port").getString().toInt()
                     RestAssured.enableLoggingOfRequestAndResponseIfValidationFails()
 
-                    Runtime.getRuntime().addShutdownHook(Thread { server.stop(0, 0, TimeUnit.SECONDS) })
+                    Runtime.getRuntime().addShutdownHook(Thread {
+                        postgresContainer.stop()
+                        server.stop(0, 0, TimeUnit.SECONDS)
+                    })
                 }
             }
-        }
-
-        @AfterAll
-        @JvmStatic
-        fun teardown() {
-            postgresContainer.stop()
         }
 
         private fun startTestContainers() {

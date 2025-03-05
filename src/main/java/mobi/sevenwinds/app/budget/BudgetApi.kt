@@ -46,6 +46,16 @@ data class BudgetResponse(
     val creationDate: DateTime?
 )
 
+fun BudgetRequest.toResponse(authorFullName: String?, creationDate: DateTime?): BudgetResponse =
+    BudgetResponse(
+        year = year,
+        month = month,
+        amount = amount,
+        type = type,
+        authorFullName = authorFullName,
+        creationDate = creationDate,
+    )
+
 data class BudgetYearParam(
     @PathParam(description = "Год")
     val year: Int,
