@@ -9,6 +9,8 @@ import org.jetbrains.exposed.sql.transactions.transaction
 import org.junit.Assert
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.testcontainers.containers.PostgreSQLContainer
+import org.testcontainers.junit.jupiter.Container
 
 class BudgetApiKtTest : ServerTest() {
 

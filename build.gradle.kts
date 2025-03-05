@@ -58,12 +58,17 @@ dependencies {
     implementation("com.squareup.retrofit2:adapter-rxjava2:2.3.0")
     implementation("com.squareup.okhttp3:logging-interceptor:3.10.0")
 
+    val junit_version = "5.7.1"
     testImplementation("io.ktor:ktor-server-tests:$ktor_version")
-    testImplementation("org.junit.jupiter:junit-jupiter-api:5.7.1")
-    testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.7.1")
+    testImplementation("org.junit.jupiter:junit-jupiter-api:$junit_version")
+    testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:$junit_version")
     testImplementation("org.assertj:assertj-core:3.19.0")
     testImplementation("io.rest-assured:rest-assured:4.3.3")
     testImplementation("org.hamcrest:hamcrest:2.2")
+
+    val jupiter_version = "1.18.0"
+    testImplementation("org.testcontainers:junit-jupiter:$jupiter_version") //Test
+    testImplementation("org.testcontainers:postgresql:$jupiter_version")
 
     implementation("com.fasterxml.jackson.datatype:jackson-datatype-joda:2.18.3") // DateTime formatter
 }
