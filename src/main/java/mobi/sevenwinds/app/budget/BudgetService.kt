@@ -3,6 +3,7 @@ package mobi.sevenwinds.app.budget
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.jetbrains.exposed.sql.select
+import org.jetbrains.exposed.sql.SortOrder
 import org.jetbrains.exposed.sql.transactions.transaction
 
 object BudgetService {
@@ -61,6 +62,10 @@ object BudgetService {
     }
 
     private fun getYearBudgetRecordsPage(param: BudgetYearParam): List<BudgetRecord> {
+        val defaultSorts = arrayOf(
+            BudgetTable.month to SortOrder.ASC,
+            BudgetTable.amount to SortOrder.DESC)
+
         val operationsByYearPage =
             BudgetTable
                 .select { BudgetTable.year eq param.year }
