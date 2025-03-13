@@ -13,37 +13,79 @@ import com.papsign.ktor.openapigen.route.route
 
 fun NormalOpenAPIRoute.budget() {
     route("/budget") {
-        route("/add").post<Unit, BudgetRecord, BudgetRecord>(info("Добавить запись")) { param, body ->
-            respond(BudgetService.addRecord(body))
+        route("/add").post<Unit, BudgetRecordData, AddBudgetRecordData>(info("Добавить запись")) { _, addBudgetRecordData ->
+            respond(BudgetService.addRecord(addBudgetRecordData))
         }
 
         route("/year/{year}/stats") {
-            get<BudgetYearParam, BudgetYearStatsResponse>(info("Получить статистику за год")) { param ->
-                respond(BudgetService.getYearStats(param))
+            get<BudgetYearParams, BudgetYearStatsData>(info("Получить статистику за год")) { budgetYearParams ->
+                respond(BudgetService.getYearStats(budgetYearParams))
             }
         }
     }
 }
 
-data class BudgetRecord(
-    @Min(1900) val year: Int,
-    @Min(1) @Max(12) val month: Int,
-    @Min(1) val amount: Int,
-    val type: BudgetType
+@JsonInclude(JsonInclude.Include.NON_NULL)
+data class BudgetRecordData(
+    val year: Int,
+    val month: Int,
+    val amount: Int,
+    val type: BudgetType,
+    val authorName: String?,
+    val authorCreationDate: String?
 )
 
-data class BudgetYearParam(
-    @PathParam("Год") val year: Int,
-    @QueryParam("Лимит пагинации") val limit: Int,
-    @QueryParam("Смещение пагинации") val offset: Int,
+data class AddBudgetRecordData(
+    @Min(DataConstraints.MIN_YEAR, "Год должен быть не раньше 1900.")
+    val year: Int,
+
+    @Min(1, "Месяц не может быть меньше 1.")
+    @Max(12, "Месяц не может быть больше 12.")
+    val month: Int,
+
+    @Min(1, "Количество не может быть меньше 1.")
+    val amount: Int,
+
+    val type: BudgetType,
+    val authorId: Int? = null
 )
 
-class BudgetYearStatsResponse(
+data class BudgetYearParams(
+    @PathParam("Год")
+    @Min(DataConstraints.MIN_YEAR)
+    val year: Int,
+
+    @QueryParam("Лимит пагинации")
+    @Max(DataConstraints.MAX_LIMIT)
+    @Min(DataConstraints.MIN_LIMIT)
+    val limit: Int,
+
+    @QueryParam("Смещение пагинации")
+    @Max(DataConstraints.MAX_OFFSET)
+    @Min(DataConstraints.MIN_OFFSET)
+    val offset: Int,
+
+    @QueryParam("Фильтр по ФИО автора")
+    @Length(max = 255, min = 1)
+    val authorName: String? = null,
+)
+
+class BudgetYearStatsData(
     val total: Int,
     val totalByType: Map<String, Int>,
-    val items: List<BudgetRecord>
+    val items: List<BudgetRecordData>,
 )
 
 enum class BudgetType {
-    Приход, Расход, Комиссия
+    Приход, Расход
+}
+
+interface DataConstraints {
+    companion object {
+        const val MIN_YEAR = 1900L
+        const val MAX_LIMIT = 1000L
+        const val MIN_LIMIT = 1L
+        const val MAX_OFFSET = 10000L
+        const val MIN_OFFSET = 0L
+    }
 }

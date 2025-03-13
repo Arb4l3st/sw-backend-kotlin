@@ -1,10 +1,12 @@
 package mobi.sevenwinds.app.budget
 
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
-import org.jetbrains.exposed.sql.select
-import org.jetbrains.exposed.sql.SortOrder
-import org.jetbrains.exposed.sql.transactions.transaction
+import mobi.sevenwinds.app.author.AuthorEntity
+import mobi.sevenwinds.app.author.AuthorTable
+import org.jetbrains.exposed.sql.*
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
+import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
+import org.jetbrains.exposed.sql.transactions.experimental.suspendedTransactionAsync
 
 object BudgetService {
     suspend fun addRecord(body: BudgetRecord): BudgetRecord = withContext(Dispatchers.IO) {
@@ -14,6 +16,16 @@ object BudgetService {
                 this.month = body.month
                 this.amount = body.amount
                 this.type = body.type
+                this.authorEntity = body.authorId?.let { AuthorEntity[it] }
+            }.toResponse()
+        }
+
+        suspend fun getYearStats(params: BudgetYearParams): BudgetYearStatsData {
+            val (year, limit, offset, authorName) = params
+
+            val yearStatsDeferred =
+                suspendedTransactionAsync(Dispatchers.IO) {
+                    getYearStats(year)
             }
 
             return@transaction entity.toResponse()

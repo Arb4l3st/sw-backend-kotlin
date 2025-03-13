@@ -10,6 +10,7 @@ object BudgetTable : IntIdTable("budget") {
     val month = integer("month")
     val amount = integer("amount")
     val type = enumerationByName("type", 100, BudgetType::class)
+    val authorId = optReference("author_id", AuthorTable)
 }
 
 class BudgetEntity(id: EntityID<Int>) : IntEntity(id) {
@@ -19,8 +20,11 @@ class BudgetEntity(id: EntityID<Int>) : IntEntity(id) {
     var month by BudgetTable.month
     var amount by BudgetTable.amount
     var type by BudgetTable.type
+    var authorEntity by AuthorEntity optionalReferencedOn BudgetTable.authorId
 
-    fun toResponse(): BudgetRecord {
-        return BudgetRecord(year, month, amount, type)
-    }
+    fun toResponse(): BudgetRecordData {
+        return BudgetRecordData(
+            year, month, amount, type,
+            authorEntity?.fullName,
+            authorEntity?.creationDateTime?.toString())
 }

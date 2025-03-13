@@ -10,6 +10,7 @@ import mobi.sevenwinds.app.budget.budget
 
 fun NormalOpenAPIRoute.swaggerRouting() {
     tag(SwaggerTag.Бюджет) { budget() }
+    tag(SwaggerTag.Автор) { author() }
 }
 
 fun Routing.serviceRouting() {
