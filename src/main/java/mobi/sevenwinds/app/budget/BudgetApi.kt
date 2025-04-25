@@ -47,6 +47,7 @@ data class BudgetYearParam(
     @PathParam("Год") val year: Int,
     @QueryParam("Лимит пагинации") val limit: Int,
     @QueryParam("Смещение пагинации") val offset: Int,
+    @QueryParam("ФИО автора (поиск подстрокой, без учёта регистра)") val authorName: String? = null,
 )
 
 class BudgetYearStatsResponse(
@@ -55,6 +56,7 @@ class BudgetYearStatsResponse(
     val items: List<BudgetResponse>
 )
 
+@Suppress("NonAsciiCharacters", "EnumEntryName")
 enum class BudgetType {
     Приход, Расход
 }
